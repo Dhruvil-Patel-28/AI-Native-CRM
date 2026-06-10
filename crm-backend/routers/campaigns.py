@@ -206,9 +206,9 @@ async def get_campaign_status(
             campaign.status = CampaignStatus.COMPLETED
             db.commit()
 
-    # Generate AI summary for completed campaigns
-    ai_summary = None
-    if campaign.status == CampaignStatus.COMPLETED and campaign.total_sent > 0:
+    # Generate AI summary for completed campaigns (cached in DB after first generation)
+    ai_summary = campaign.ai_summary
+    if campaign.status == CampaignStatus.COMPLETED and campaign.total_sent > 0 and not ai_summary:
         delivery_rate = (
             (campaign.total_delivered / campaign.total_sent * 100)
             if campaign.total_sent > 0
@@ -242,6 +242,10 @@ async def get_campaign_status(
         recommendation = summary_data.get("recommendation", "")
         if recommendation:
             ai_summary += f"\n\n💡 {recommendation}"
+
+        # Persist summary to avoid regenerating on every poll
+        campaign.ai_summary = ai_summary
+        db.commit()
 
     # Get last 20 messages for live feed
     recent_messages_raw = (

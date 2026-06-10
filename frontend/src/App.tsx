@@ -1,8 +1,10 @@
 /**
  * App — Root component with routing and persistent sidebar.
  *
- * Provides 3 routes:
+ * Provides 5 routes:
  *   /                         → Dashboard
+ *   /campaigns                → All Campaigns list
+ *   /customers                → Customers overview + CSV upload
  *   /campaign/:insightId      → CampaignFlow
  *   /results/:campaignId      → Results
  *
@@ -10,10 +12,12 @@
  * and a "Powered by AI" badge.
  */
 
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import CampaignFlow from './pages/CampaignFlow'
 import Results from './pages/Results'
+import Campaigns from './pages/Campaigns'
+import Customers from './pages/Customers'
 
 function App() {
   return (
@@ -23,6 +27,8 @@ function App() {
         <main className="flex-1 overflow-y-auto bg-surface-bg">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/customers" element={<Customers />} />
             <Route path="/campaign/:insightId" element={<CampaignFlow />} />
             <Route path="/results/:campaignId" element={<Results />} />
           </Routes>
@@ -33,11 +39,20 @@ function App() {
 }
 
 function Sidebar() {
+  const location = useLocation()
+
   const navItems = [
     { to: '/', label: 'Dashboard', icon: DashboardIcon },
-    { to: '/', label: 'Campaigns', icon: CampaignIcon, hash: '#campaigns' },
-    { to: '/', label: 'Customers', icon: CustomersIcon, hash: '#customers' },
+    { to: '/campaigns', label: 'Campaigns', icon: CampaignIcon },
+    { to: '/customers', label: 'Customers', icon: CustomersIcon },
   ]
+
+  const isNavActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname.startsWith('/campaign/') || location.pathname.startsWith('/results/')
+    }
+    return location.pathname === path
+  }
 
   return (
     <aside className="w-64 bg-surface-sidebar border-r border-surface-border flex flex-col">
@@ -62,13 +77,14 @@ function Sidebar() {
           <NavLink
             key={item.label}
             to={item.to}
-            className={({ isActive }) =>
+            className={() =>
               `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive && item.label === 'Dashboard'
+                isNavActive(item.to)
                   ? 'bg-accent/10 text-accent'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
               }`
             }
+            id={`nav-${item.label.toLowerCase()}`}
           >
             <item.icon />
             {item.label}

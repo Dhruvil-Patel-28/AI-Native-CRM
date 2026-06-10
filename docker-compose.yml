@@ -37,6 +37,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/glowstudio
       CHANNEL_STUB_URL: http://channel-stub:8001
+      WEBHOOK_BASE_URL: http://crm-backend:8000
       REDIS_URL: redis://redis:6379
     depends_on:
       postgres:

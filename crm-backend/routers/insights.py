@@ -131,6 +131,11 @@ async def get_insights(db: Session = Depends(get_db)) -> list[InsightOut]:
         )
 
     # --- Persist insights to DB ---
+    # Remove stale, un-acted-on insights to prevent duplication.
+    # Insights already linked to campaigns are preserved for audit trail.
+    db.query(AIInsight).filter(AIInsight.is_acted_on == False).delete()  # noqa: E712
+    db.flush()
+
     saved_insights: list[InsightOut] = []
     for raw in raw_insights:
         insight = AIInsight(

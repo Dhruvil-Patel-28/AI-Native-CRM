@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Campaign, Message, MessageStatus
+from models import Campaign, Customer, Message, MessageStatus
 from schemas import WebhookReceipt
 
 logger = logging.getLogger(__name__)
@@ -115,6 +115,20 @@ async def receive_receipt(
             {counter_field: getattr(Campaign, counter_field) + 1},
             synchronize_session="evaluate",
         )
+
+    # --- Attribute revenue on clicks ---
+    if body.status == "clicked" and message.campaign_id:
+        customer = (
+            db.query(Customer)
+            .filter(Customer.id == message.customer_id)
+            .first()
+        )
+        if customer and customer.total_orders > 0:
+            avg_value = round(customer.total_spent / customer.total_orders, 2)
+            db.query(Campaign).filter(Campaign.id == message.campaign_id).update(
+                {"revenue_attributed": Campaign.revenue_attributed + avg_value},
+                synchronize_session="evaluate",
+            )
 
     db.commit()
 

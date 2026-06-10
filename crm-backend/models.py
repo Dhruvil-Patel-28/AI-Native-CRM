@@ -149,6 +149,7 @@ class Campaign(Base):
     total_clicked: Mapped[int] = mapped_column(Integer, default=0)
     total_failed: Mapped[int] = mapped_column(Integer, default=0)
     revenue_attributed: Mapped[float] = mapped_column(Float, default=0.0)
+    ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     messages: Mapped[list["Message"]] = relationship(
         "Message", back_populates="campaign", cascade="all, delete-orphan"

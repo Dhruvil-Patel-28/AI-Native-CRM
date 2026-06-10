@@ -109,9 +109,9 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 
 def _create_loyal_customer(index: int) -> tuple[Customer, list[Order]]:
-    """Loyal segment: 5-10 orders, last order within 30 days."""
+    """Loyal segment: 5+ orders, last order within 30 days."""
     name = _random_name()
-    num_orders = random.randint(5, 10)
+    num_orders = 5
     orders: list[Order] = []
     total_spent = 0.0
     customer_id = uuid.uuid4()
@@ -187,9 +187,9 @@ def _create_at_risk_customer(index: int) -> tuple[Customer, list[Order]]:
 
 
 def _create_lapsed_customer(index: int) -> tuple[Customer, list[Order]]:
-    """Lapsed segment: 1-2 orders, last order 90+ days ago."""
+    """Lapsed segment: 1 order, last order 90+ days ago."""
     name = _random_name()
-    num_orders = random.randint(1, 2)
+    num_orders = 1
     orders: list[Order] = []
     total_spent = 0.0
     customer_id = uuid.uuid4()

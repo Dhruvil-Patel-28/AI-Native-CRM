@@ -56,6 +56,7 @@ The CRM backend automatically seeds the database with 800 customers, 2000+ order
 | `GROQ_API_KEY` | crm-backend | Groq API key for LLM calls | *required* |
 | `GROQ_MODEL` | crm-backend | LLM model name | `llama-3.3-70b-versatile` |
 | `CHANNEL_STUB_URL` | crm-backend | Channel stub service URL | `http://localhost:8001` |
+| `WEBHOOK_BASE_URL` | crm-backend | Callback URL for channel stub → CRM | `http://localhost:8000` |
 | `REDIS_URL` | crm-backend | Redis connection string | `redis://localhost:6379` |
 | `CORS_ORIGINS` | crm-backend | Allowed CORS origins | `http://localhost:3000` |
 | `PORT` | channel-stub | Service port | `8001` |
