@@ -420,6 +420,81 @@ if r.status_code == 200:
     check("Confirm NL campaign returns 201", r_conf.status_code == 201, f"got {r_conf.status_code}")
 
 
+# ═══════════════════════════════════════════════
+# PHASE 7: AUTOPILOT AGENT MODE (V3)
+# ═══════════════════════════════════════════════
+print("\n" + "="*60)
+print("PHASE 7: AUTOPILOT AGENT MODE (V3)")
+print("="*60)
+
+# Test POST /autopilot/run
+print("\n--- Autopilot Run ---")
+autopilot_payload = {
+    "goal": "Re-engage at_risk customers with a personalized sunscreen discount on WhatsApp"
+}
+r = requests.post(f"{BASE}/autopilot/run", json=autopilot_payload)
+check("POST /autopilot/run returns 200", r.status_code == 200, f"got {r.status_code}")
+if r.status_code == 200:
+    plan = r.json()
+    print("  DEBUG Autopilot Plan Response JSON:")
+    print(json.dumps(plan, indent=2))
+    check("Has run_id", "run_id" in plan)
+    check("Has campaign_name", "campaign_name" in plan)
+    check("Has message", "message" in plan)
+    check("Has channel", "channel" in plan)
+    check("Has segment_params", "segment_params" in plan)
+    check("Has reasoning", "reasoning" in plan)
+    check("Has plan_summary", "plan_summary" in plan)
+    check("Has expected_revenue", "expected_revenue" in plan)
+    check("Has confidence", "confidence" in plan)
+    check("Has risk", "risk" in plan)
+    check("Has customer_count", "customer_count" in plan)
+
+    run_id = plan.get("run_id")
+
+    # Test GET /autopilot/{run_id}
+    print("\n--- Get Autopilot Plan ---")
+    r_get = requests.get(f"{BASE}/autopilot/{run_id}")
+    check("GET /autopilot/{run_id} returns 200", r_get.status_code == 200, f"got {r_get.status_code}")
+    if r_get.status_code == 200:
+        plan_get = r_get.json()
+        check("Plan run_id matches", plan_get.get("run_id") == run_id)
+
+    # Test POST /autopilot/{run_id}/reject
+    print("\n--- Autopilot Run for Rejection ---")
+    r_rej_run = requests.post(f"{BASE}/autopilot/run", json={"goal": "Temporary goal to reject"})
+    if r_rej_run.status_code == 200:
+        rej_plan = r_rej_run.json()
+        rej_run_id = rej_plan.get("run_id")
+        
+        r_reject = requests.post(f"{BASE}/autopilot/{rej_run_id}/reject")
+        check("POST /autopilot/{run_id}/reject returns 200", r_reject.status_code == 200, f"got {r_reject.status_code}")
+        
+        # Test double rejection
+        r_double_rej = requests.post(f"{BASE}/autopilot/{rej_run_id}/reject")
+        check("Rejecting already rejected plan returns 400", r_double_rej.status_code == 400, f"got {r_double_rej.status_code}")
+        
+        # Test approving rejected
+        r_approve_rej = requests.post(f"{BASE}/autopilot/{rej_run_id}/approve")
+        check("Approving rejected plan returns 400", r_approve_rej.status_code == 400, f"got {r_approve_rej.status_code}")
+
+    # Test POST /autopilot/{run_id}/approve
+    print("\n--- Approve Autopilot Plan ---")
+    r_approve = requests.post(f"{BASE}/autopilot/{run_id}/approve")
+    check("POST /autopilot/{run_id}/approve returns 200", r_approve.status_code == 200, f"got {r_approve.status_code}. Detail: {r_approve.text}")
+    if r_approve.status_code == 200:
+        approve_data = r_approve.json()
+        check("Returns campaign_id", "campaign_id" in approve_data)
+        ap_campaign_id = approve_data.get("campaign_id")
+
+        # Test double approval
+        r_double_app = requests.post(f"{BASE}/autopilot/{run_id}/approve")
+        check("Approving already approved plan returns 400", r_double_app.status_code == 400, f"got {r_double_app.status_code}")
+
+        # Check campaign status is running/tracking
+        r_camp = requests.get(f"{BASE}/campaigns/{ap_campaign_id}/status")
+        check("Autopilot campaign is registered", r_camp.status_code == 200)
+
 
 # ═══════════════════════════════════════════════
 # FINAL REPORT

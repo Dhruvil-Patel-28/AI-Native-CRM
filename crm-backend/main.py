@@ -42,12 +42,13 @@ app.add_middleware(
 )
 
 # Import and register routers
-from routers import campaigns, customers, insights, webhooks  # noqa: E402
+from routers import campaigns, customers, insights, webhooks, autopilot  # noqa: E402
 
 app.include_router(customers.router, prefix="/customers", tags=["Customers"])
 app.include_router(campaigns.router, prefix="/campaigns", tags=["Campaigns"])
 app.include_router(insights.router, prefix="/insights", tags=["Insights"])
 app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
+app.include_router(autopilot.router, prefix="/autopilot", tags=["Autopilot"])
 
 
 @app.get("/health", tags=["Health"])

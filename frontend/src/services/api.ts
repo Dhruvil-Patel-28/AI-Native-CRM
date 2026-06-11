@@ -51,6 +51,25 @@ export interface NLPreviewResponse extends CampaignPreview {
   campaign_name: string
 }
 
+export interface AutopilotPlan {
+  run_id: string
+  goal: string
+  reasoning: string
+  segment_params: Record<string, unknown>
+  customer_count: number
+  segment_stats: SegmentStats
+  channel: string
+  message: string
+  message_reasoning: string
+  plan_title: string
+  plan_summary: string
+  confidence: string
+  risk: string
+  expected_revenue: number
+  campaign_name: string
+}
+
+
 
 export interface Campaign {
   id: string
@@ -219,3 +238,44 @@ export async function uploadCustomers(file: File): Promise<UploadResult | null> 
     return null
   }
 }
+
+export async function runAutopilot(goal: string): Promise<AutopilotPlan | null> {
+  try {
+    const response = await api.post<AutopilotPlan>('/autopilot/run', { goal })
+    return response.data
+  } catch (error) {
+    console.error('Failed to run autopilot:', error)
+    return null
+  }
+}
+
+export async function getAutopilotPlan(runId: string): Promise<AutopilotPlan | null> {
+  try {
+    const response = await api.get<AutopilotPlan>(`/autopilot/${runId}`)
+    return response.data
+  } catch (error) {
+    console.error('Failed to fetch autopilot plan:', error)
+    return null
+  }
+}
+
+export async function approveAutopilotPlan(runId: string): Promise<{ campaign_id: string } | null> {
+  try {
+    const response = await api.post<{ campaign_id: string }>(`/autopilot/${runId}/approve`)
+    return response.data
+  } catch (error) {
+    console.error('Failed to approve autopilot plan:', error)
+    return null
+  }
+}
+
+export async function rejectAutopilotPlan(runId: string): Promise<{ status: string } | null> {
+  try {
+    const response = await api.post<{ status: string }>(`/autopilot/${runId}/reject`)
+    return response.data
+  } catch (error) {
+    console.error('Failed to reject autopilot plan:', error)
+    return null
+  }
+}
+

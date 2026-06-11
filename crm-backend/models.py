@@ -246,3 +246,33 @@ class NLSession(Base):
         DateTime(timezone=True), nullable=False
     )
 
+
+class AutopilotStatus(str, enum.Enum):
+    """Lifecycle states for an autopilot run."""
+
+    PLANNED = "planned"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class AutopilotRun(Base):
+    """Stores campaigns planned by the AI marketing agent."""
+
+    __tablename__ = "autopilot_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    goal: Mapped[str] = mapped_column(Text, nullable=False)
+    plan_data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    status: Mapped[AutopilotStatus] = mapped_column(
+        Enum(AutopilotStatus), default=AutopilotStatus.PLANNED
+    )
+    campaign_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+

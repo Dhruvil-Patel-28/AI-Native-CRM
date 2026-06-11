@@ -230,3 +230,44 @@ class NLPreviewResponse(BaseModel):
     customer_count: int
     campaign_name: str
 
+
+# ---------------------------------------------------------------------------
+# Autopilot Schemas
+# ---------------------------------------------------------------------------
+
+
+class AutopilotRunRequest(BaseModel):
+    """Request body for starting an autopilot agent run."""
+
+    goal: str
+
+
+class AutopilotSegmentStats(BaseModel):
+    """Segment statistics specific to the autopilot plan response."""
+
+    avg_order_value: float
+    top_cities: list[str]
+    top_products: list[str]
+    total_potential_revenue: float
+
+
+class AutopilotPlanResponse(BaseModel):
+    """Response detailing the AI agent's planned campaign."""
+
+    run_id: UUID
+    goal: str
+    reasoning: str
+    segment_params: dict
+    customer_count: int
+    segment_stats: AutopilotSegmentStats
+    channel: str
+    message: str
+    message_reasoning: str
+    plan_title: str
+    plan_summary: str
+    confidence: str
+    risk: str
+    expected_revenue: float
+    campaign_name: str
+
+

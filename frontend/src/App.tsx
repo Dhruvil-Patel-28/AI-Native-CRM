@@ -18,6 +18,7 @@ import CampaignFlow from './pages/CampaignFlow'
 import Results from './pages/Results'
 import Campaigns from './pages/Campaigns'
 import Customers from './pages/Customers'
+import AutopilotReview from './pages/AutopilotReview'
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/customers" element={<Customers />} />
             <Route path="/campaign/:insightId" element={<CampaignFlow />} />
             <Route path="/campaign/nl/:sessionId" element={<CampaignFlow />} />
+            <Route path="/autopilot/:runId" element={<AutopilotReview />} />
             <Route path="/results/:campaignId" element={<Results />} />
           </Routes>
         </main>

@@ -37,3 +37,5 @@ docker-compose.override.yml
 *.pid
 .coverage
 htmlcov/
+project_story.md
+

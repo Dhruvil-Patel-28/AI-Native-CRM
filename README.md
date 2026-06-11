@@ -1,120 +1,176 @@
 # Glow Studio CRM
 
-AI-native Mini CRM for Glow Studio — a fictional Indian D2C skincare brand. AI proactively surfaces insights from customer data, generates campaign plans, and summarizes results. The marketer stays in control: they never build segments manually. AI does the thinking, the marketer approves and refines.
+An AI-native Mini CRM built for **Glow Studio** — a fictional Indian D2C skincare brand. 
 
-## Architecture
+Glow Studio CRM redefines marketing campaign creation by putting AI at the core of the workflow. Instead of forcing marketers to write database queries, configure complex segmentation lists, or manually draft messages, the CRM's autonomous agent and natural language interfaces build campaign parameters on behalf of the user. The marketer remains in absolute control: they prompt their goals, inspect reasoning, preview structured outcomes, and approve before anything goes live.
+
+---
+
+## 🚀 Key Iteration Milestones (Phases)
+
+The CRM is divided into three key capabilities, representing progressive autonomy:
+
+### Phase 1 (V1): Marketer-Guided AI Insights
+- **Insight Cards**: The CRM automatically evaluates customer order histories and surfaces 4 proactive, prioritized opportunity cards (e.g., "Max Sunscreen demand in Mumbai", "Win back at-risk serum buyers").
+- **Wizard Flow**: Clicking any insight triggers a structured 4-step wizard:
+  1. **Intent**: Summarizes the business goal.
+  2. **Segment**: Compiles the target audience (AOV, top cities, category filters).
+  3. **Message**: Drafts personalized WhatsApp and Email copies.
+  4. **Confirm**: Confirms parameters and launches.
+- **Results Dashboard**: Displays campaign performance in real-time, processes delivery status webhooks, attributes revenue on click-throughs, and uses Groq to generate a final summary report once all deliveries settle.
+
+### Phase 2 (V2): Natural Language Campaign Wizard
+- **NL Entry Point**: Marketers can write arbitrary goals directly into an input box on the dashboard (e.g., *"Re-engage Mumbai sunscreen buyers who bought in March but not April"*).
+- **Session-Based Generation**: Groq translates the prompt into structured filters, channel choices, and copy templates, then initializes the 4-step campaign wizard pre-loaded with these settings.
+- **Refinement Loop**: The marketer can enter text refinements (e.g., *"give a larger 20% discount instead"* or *"restrict only to Delhi"*), updating the active campaign session dynamically.
+
+### Phase 3 (V3): Autopilot Agent Mode
+- **Autonomous Takeover**: The marketer provides a broad, high-level business goal (e.g., *"Increase repeat purchases"* or *"Minimize customer churn"*).
+- **Multi-Step Agent reasoning**:
+  - **Step 1 (Strategic Analysis)**: Gathers database stats (counts of Loyal, At-Risk, Lapsed, and New customers, AOV, top categories, and campaign click performance history) and decides the target segment, parameters, channel, and target conversion count.
+  - **Step 2 (Database Segmentation)**: Queries the database to pull true segment metrics.
+  - **Step 3 (Copywriting)**: Crafts contextual campaign templates suited for the selected channel.
+  - **Step 4 (Narrative & Risk Formulation)**: Compiles the proposed campaign title, a marketer-facing narrative, risk parameters, and confidence scores.
+  - **Step 5 (Financial Forecasting)**: Extracts the estimated conversions via Regex analysis and multiplies it by the segment's Average Order Value (AOV) to calculate the forecasted campaign revenue.
+- **Autopilot Review Page**: Displays the agent's chain-of-thought logic (collapsible), targeted customer statistics, channel choices, message templates, risk levels, and forecasted revenue. Marketers can reject the proposal or launch the campaign in one click.
+
+---
+
+## ⚙️ Architecture & Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        React Frontend                          │
-│                    (Vite + TypeScript + Tailwind)               │
-│                         :3000                                   │
-└────────────────────────────┬────────────────────────────────────┘
-                             │ HTTP
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      CRM Backend (FastAPI)                      │
-│   Routers: /insights · /campaigns · /webhooks · /customers     │
-│   Services: AI (Groq) · Segment Builder · Campaign Delivery    │
-│                         :8000                                   │
-├────────────────┬───────────────────────┬────────────────────────┤
-│   PostgreSQL   │       Redis           │   Channel Stub         │
-│   :5432        │       :6379           │   (FastAPI) :8001      │
-│                │                       │                        │
-│   customers    │   caching (future)    │   Simulated delivery   │
-│   orders       │                       │   Callbacks → webhooks │
-│   campaigns    │                       │                        │
-│   messages     │                       │                        │
-│   ai_insights  │                       │                        │
-└────────────────┴───────────────────────┴────────────────────────┘
+                                  ┌──────────────────────────────┐
+                                  │       React Frontend         │
+                                  │ (Vite + TypeScript + Tailwind)│
+                                  │            :3000             │
+                                  └──────────────┬───────────────┘
+                                                 │
+                                                 │ HTTP Requests
+                                                 ▼
+                                  ┌──────────────────────────────┐
+                                  │    CRM Backend (FastAPI)     │
+                                  │            :8000             │
+                                  └──────────────┬───────────────┘
+                                                 │
+                  ┌──────────────────────────────┼──────────────────────────────┐
+                  ▼                              ▼                              ▼
+     ┌────────────────────────┐    ┌────────────────────────┐    ┌────────────────────────┐
+     │      PostgreSQL        │    │         Redis          │    │      Channel Stub      │
+     │         :5432          │    │         :6379          │    │    (FastAPI) :8001     │
+     ├────────────────────────┤    └────────────────────────┘    ├────────────────────────┤
+     │ - customers / orders   │                                  │ - Simulated Delivery   │
+     │ - campaigns / messages │                                  │ - Callback Delivery    │
+     │ - nl_sessions / runs   │                                  │   Status webhooks      │
+     └────────────────────────┘                                  └────────────────────────┘
 ```
 
-## Quick Start
+### Campaign Life Cycle (E2E)
+1. **Plan Generation**: The AI (Groq `llama-3.3-70b-versatile`) parses an insight or natural language prompt into structured filters and copy templates.
+2. **Dynamic Segmentation**: The CRM backend applies these filters directly to the PostgreSQL database using SQL query filters (recency, spending limits, cities, category purchases) to compile the targeted customer IDs.
+3. **Async Campaign Dispatch**: Once approved, FastAPI starts a background worker (`BackgroundTasks`) to process the campaign. The API returns a `200/201` status immediately, and the client navigates to the tracking dashboard.
+4. **Batch Delivery**: The background dispatcher groups customers into batches of 50 and fires requests concurrently using `asyncio.gather` to the **Channel Stub** simulating message sending.
+5. **Real-Time Callbacks**: The Channel Stub processes deliveries asynchronously and delivers webhooks back to the CRM backend (`POST /webhooks/receipt`) simulating real-world response dynamics (e.g., delivered, opened, clicked, failed, including mock duplicate callback retries).
+6. **Analytics Attribution**: Upon receipt of a webhook status, the CRM records the delivery metrics. If a message is clicked, the brand's average order value is credited as attributed campaign revenue in real-time.
 
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19, TypeScript (strict), Tailwind CSS 3, Vite 6, React Router DOM v6, Axios
+- **Backend**: FastAPI, SQLAlchemy 2.0, Pydantic v2, PostgreSQL (psycopg2)
+- **Database / Cache**: PostgreSQL 16, Redis 7 (alpine)
+- **AI Integration**: Groq SDK (`llama-3.3-70b-versatile` with JSON schema enforcement)
+- **Environment**: Docker, Docker Compose
+
+---
+
+## 🚀 Quick Start
+
+Ensure you have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed on your machine.
+
+### 1. Set Up Environment Variables
+Copy the example environment file:
 ```bash
-# 1. Clone the repository
-git clone <repo-url> && cd glow-studio-crm
-
-# 2. Set up environment variables
 cp crm-backend/.env.example crm-backend/.env
-# Edit crm-backend/.env and add your GROQ_API_KEY
-
-# 3. Start all services
-docker-compose up --build
-
-# 4. Open the app
-open http://localhost:3000
+```
+Edit `crm-backend/.env` and insert your **`GROQ_API_KEY`**:
+```ini
+GROQ_API_KEY=gsk_your_actual_groq_key_here
 ```
 
-The CRM backend automatically seeds the database with 800 customers, 2000+ orders, and 3 historical campaigns on first startup.
+### 2. Launch Services
+Run the following command to build and start the database, backend, channel stub, and frontend React app:
+```bash
+docker compose up --build -d
+```
+This starts:
+- **React Frontend**: `http://localhost:3000`
+- **CRM FastAPI Backend**: `http://localhost:8000`
+- **Channel Stub Service**: `http://localhost:8001`
+- **PostgreSQL Database**: `localhost:5432`
+- **Redis Cache**: `localhost:6379`
 
-## Environment Variables
+*Note: On first startup, the database automatically migrates tables and seeds 800 customers, 2000+ orders, 3 completed campaigns, and 4 baseline insights.*
 
-| Variable | Service | Description | Default |
-|----------|---------|-------------|---------|
-| `DATABASE_URL` | crm-backend | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/glowstudio` |
-| `GROQ_API_KEY` | crm-backend | Groq API key for LLM calls | *required* |
-| `GROQ_MODEL` | crm-backend | LLM model name | `llama-3.3-70b-versatile` |
-| `CHANNEL_STUB_URL` | crm-backend | Channel stub service URL | `http://localhost:8001` |
-| `WEBHOOK_BASE_URL` | crm-backend | Callback URL for channel stub → CRM | `http://localhost:8000` |
-| `REDIS_URL` | crm-backend | Redis connection string | `redis://localhost:6379` |
-| `CORS_ORIGINS` | crm-backend | Allowed CORS origins | `http://localhost:3000` |
-| `PORT` | channel-stub | Service port | `8001` |
-| `VITE_API_URL` | frontend | CRM backend URL | `http://localhost:8000` |
+---
 
-## API Endpoints
+## 🧪 Running Automated Tests
 
-### Insights
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/insights` | Generate AI insights from customer data |
+A comprehensive integration test suite validates all endpoints, webhook processing, natural language sessions, and autopilot agent flows.
 
-### Campaigns
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/campaigns/preview` | AI-powered campaign preview |
-| `POST` | `/campaigns/confirm` | Confirm and fire campaign |
-| `GET` | `/campaigns/{id}/status` | Campaign status with live feed |
-| `GET` | `/campaigns` | List all campaigns |
+To run tests in a clean database state:
+```bash
+# Wipe PostgreSQL volumes to reset database, rebuild containers, and execute tests
+docker compose down -v && docker compose up -d && sleep 10 && python3 test_all.py
+```
+This checks 112 validation items:
+- Service healthchecks (Backend, Channel Stub, Frontend)
+- Insights loading and idempotency
+- V1 Wizard Flow previews and confirmation
+- Asynchronous callback reception and attributed revenue updates
+- CSV customer uploading with duplicate upserting
+- V2 Natural Language sessions and refinements
+- V3 Autopilot planning, persistence, approval flows, and rejection flows
 
-### Customers
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/customers/stats` | Dashboard aggregate stats |
-| `POST` | `/customers/upload` | CSV upload with upsert |
+---
 
-### Webhooks
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/webhooks/receipt` | Delivery status callbacks |
+## 📦 API Reference
 
-### Channel Stub
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/send` | Accept message for simulated delivery |
+### 1. Customers
+- `GET /customers/stats`: Retreives aggregate statistics (total count, revenue, average order value, top brand categories).
+- `POST /customers/upload`: Imports custom CSV sheets of customers and order metrics. Uses upsert logic on email/phone records to prevent duplicate profiles.
 
-## Design Decisions
+### 2. Campaign Wizard & Insights
+- `GET /insights`: Generates 4 skincare segment business opportunities.
+- `POST /campaigns/preview`: Takes an `insight_id` and optional `refinement_text` to return message copies, target counts, and city/category stats.
+- `POST /campaigns/confirm`: Saves a campaign record, maps segments, and kicks off background async dispatch.
+- `GET /campaigns`: Lists history of all campaigns.
+- `GET /campaigns/{id}/status`: Live dashboard statistics (delivered, opened, clicked, failed, attributed revenue, AI summary report).
 
-### 1. AI as a First-Class Service, Not a Feature
-The AI service is a separate module (`ai_service.py`) with three focused functions, each with comprehensive fallback responses. This means the CRM remains fully functional even when the LLM is unavailable — the marketer gets slightly less nuanced insights, but the workflow never breaks. Every Groq call uses `response_format={"type": "json_object"}` for reliable structured output.
+### 3. V2: Natural Language Campaign
+- `POST /campaigns/nl-preview`: Accepts `nl_input` prompts and optional `session_id` to generate structured wizard previews and refinement modifications.
+- `GET /campaigns/nl-session/{session_id}`: Retrieves parameters for active natural language sessions.
 
-### 2. Channel Stub with Realistic Simulation
-Rather than mocking delivery in the CRM itself, the channel stub is a standalone service that simulates real-world delivery dynamics: probabilistic success rates, timing delays, and crucially, 10% duplicate callbacks. This forces the CRM's webhook handler to implement proper idempotency — the same pattern needed for real WhatsApp/email integrations.
+### 4. V3: Autopilot Agent
+- `POST /autopilot/run`: Accepts a high-level goal, executes the 5-stage Groq agent planning loop, stores details in the DB, and returns the plan.
+- `GET /autopilot/{run_id}`: Fetches details of a planned autopilot run.
+- `POST /autopilot/{run_id}/approve`: Changes status to approved, launches campaign, and begins message dispatching.
+- `POST /autopilot/{run_id}/reject`: Flags the campaign proposal as rejected.
 
-### 3. Background Task Campaign Firing
-Campaigns fire asynchronously via FastAPI's `BackgroundTasks`. The backend returns immediately with the campaign ID, and the frontend polls for status updates. Messages are sent in batches of 50 using `asyncio.gather` for concurrency without overwhelming the channel stub. This mirrors real-world campaign infrastructure where sends happen asynchronously.
+---
 
-### 4. Dynamic Segmentation over Saved Segments
-Instead of pre-computed, saved segments that go stale, the segment service builds queries dynamically from filter parameters. This means segments are always computed from current data. The AI generates segment parameters, and the same parameters flow through preview → confirm → execution. The marketer can refine segments in natural language, and the AI adjusts the parameters accordingly.
+## 🧠 Core Engineering Design Decisions
 
-## Tech Stack
+### 1. Robust LLM Sanitization & Fallbacks
+Large Language Models are non-deterministic. If Groq encounters rate-limiting or returns malformed JSON structures, the CRM does not break:
+- **Try/Except Recovery**: If any step in the Autopilot agent service fails, it immediately triggers local structural fallbacks (`_fallback_step1`, `_fallback_step3`, etc.) to build a valid campaign.
+- **Type Checking**: Before returning plans, the service verifies that all lists, dictionaries, strings, and revenue forecasts are correctly typed. Missing fields from the LLM parse are defaulted automatically.
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, TypeScript (strict), Tailwind CSS 3, Vite 6 |
-| Backend | FastAPI, SQLAlchemy 2.0, Pydantic v2 |
-| Database | PostgreSQL 16 |
-| Cache | Redis 7 |
-| AI/LLM | Groq (llama-3.3-70b-versatile) |
-| HTTP | httpx (async), axios |
-| Infrastructure | Docker Compose |
+### 2. Webhook Idempotency & Concurrency
+Integrating simulated messaging channels mimics the complexity of real networks:
+- **Duplicate Callback Rejection**: Real webhooks often deliver duplicate packets. The webhook receipt route uses PostgreSQL transactional locks to discard duplicate message delivery reports, preventing double-counting statistics.
+- **Batch Async Firing**: To ensure high performance, message dispatch uses `asyncio.gather` to send batches of 50 HTTP requests concurrently to the Channel Stub.
+
+### 3. Forecast Attribute Logic
+- Expected conversions generated by the agent (e.g. `"50-60 orders"`) are extracted using regex pattern matching `\d+` to compute the average conversion target (`55 orders`).
+- Attributed revenue is estimated by multiplying this conversion target by the target customer segment's average order value (`expected_conversions * avg_order_value`), providing realistic campaign forecasts.

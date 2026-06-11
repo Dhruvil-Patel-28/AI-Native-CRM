@@ -17,6 +17,7 @@ import {
   getCampaigns,
   getCustomerStats,
   nlPreviewCampaign,
+  runAutopilot,
   type Insight,
   type Campaign,
   type CustomerStats,
@@ -44,8 +45,45 @@ export default function Dashboard() {
     const result = await nlPreviewCampaign(nlInput)
     if (result) {
       navigate(`/campaign/nl/${result.session_id}`)
+    } else {
+      alert("Failed to parse campaign preview. Please check your query and try again.")
     }
     setNlLoading(false)
+  }
+ 
+  const [autopilotGoal, setAutopilotGoal] = useState('')
+  const [autopilotLoading, setAutopilotLoading] = useState(false)
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
+ 
+  const LOADING_MESSAGES = [
+    "Agent is analyzing your customer data...",
+    "Building the optimal segment...",
+    "Crafting personalized messages...",
+    "Preparing campaign plan..."
+  ]
+ 
+  useEffect(() => {
+    let interval: any
+    if (autopilotLoading) {
+      setLoadingMsgIdx(0)
+      interval = setInterval(() => {
+        setLoadingMsgIdx((prev) => (prev + 1) % LOADING_MESSAGES.length)
+      }, 2000)
+    }
+    return () => clearInterval(interval)
+  }, [autopilotLoading])
+ 
+  const handleAutopilotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!autopilotGoal.trim() || autopilotLoading) return
+    setAutopilotLoading(true)
+    const result = await runAutopilot(autopilotGoal)
+    if (result) {
+      navigate(`/autopilot/${result.run_id}`)
+    } else {
+      alert("Failed to initialize Autopilot agent campaign planner. Please try again.")
+    }
+    setAutopilotLoading(false)
   }
 
   const loadData = async () => {
@@ -165,6 +203,77 @@ export default function Dashboard() {
             )}
             <p className="text-xs text-text-muted mt-3">
               Or choose from AI suggestions below ↓
+            </p>
+          </div>
+
+          {/* V3: Autopilot Entry Point */}
+          <div className="bg-gradient-to-br from-accent/10 to-purple-500/5 border border-accent/20 p-6 rounded-2xl mb-8 animate-fade-in">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="p-1.5 rounded-lg bg-accent/20 text-accent flex items-center justify-center">
+                <svg className="w-5 h-5 text-accent animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L2 14h10l-2 8 10-12H12l2-8z" />
+                </svg>
+              </span>
+              <div>
+                <h2 className="text-md font-bold text-text-primary">Autopilot Mode</h2>
+                <p className="text-xs text-text-muted">Give a broad goal. AI handles everything.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAutopilotSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs text-text-secondary block mb-1.5 font-medium">
+                  What's your goal this week?
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={autopilotGoal}
+                    onChange={(e) => setAutopilotGoal(e.target.value)}
+                    disabled={autopilotLoading}
+                    placeholder="e.g. Increase repeat purchases, Re-engage lapsed customers, Maximize revenue"
+                    className="w-full px-5 py-4 pr-36 rounded-xl bg-surface-bg border border-surface-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-all disabled:opacity-50"
+                    id="autopilot-goal-input"
+                  />
+                  <button
+                    type="submit"
+                    disabled={autopilotLoading || !autopilotGoal.trim()}
+                    className="absolute right-2 px-5 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-accent/20"
+                    id="autopilot-submit-btn"
+                  >
+                    {autopilotLoading ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Thinking...
+                      </>
+                    ) : (
+                      <>
+                        Let AI take over
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {autopilotLoading && (
+              <div className="flex items-center gap-2 mt-4 text-sm text-accent font-medium bg-accent/5 border border-accent/10 px-4 py-3 rounded-lg animate-pulse">
+                <div className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin flex-shrink-0" />
+                <span>{LOADING_MESSAGES[loadingMsgIdx]}</span>
+              </div>
+            )}
+
+            <p className="text-[10px] text-text-muted mt-3 italic flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              </svg>
+              AI will plan and propose a complete campaign. You approve before anything sends.
             </p>
           </div>
 
