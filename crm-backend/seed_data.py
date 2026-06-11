@@ -421,6 +421,20 @@ def seed(db: Session) -> dict[str, int]:
 
 def run_seed() -> None:
     """Entry point — creates tables and seeds data."""
+    import time
+    from sqlalchemy.exc import OperationalError
+
+    print("🌱 Connecting to database...")
+    retries = 10
+    while retries > 0:
+        try:
+            with engine.connect() as conn:
+                break
+        except OperationalError as e:
+            print(f"⚠️ Database connection failed: {e}. Retrying in 2 seconds... ({retries} retries left)")
+            time.sleep(2)
+            retries -= 1
+
     print("🌱 Creating database tables...")
     Base.metadata.create_all(bind=engine)
 

@@ -356,6 +356,72 @@ if r3.status_code == 200:
 
 
 # ═══════════════════════════════════════════════
+# PHASE 6: NATURAL LANGUAGE CAMPAIGN (V2)
+# ═══════════════════════════════════════════════
+print("\n" + "="*60)
+print("PHASE 6: NATURAL LANGUAGE CAMPAIGN (V2)")
+print("="*60)
+
+# Test POST /campaigns/nl-preview
+print("\n--- NL Campaign Preview ---")
+nl_payload = {
+    "nl_input": "Re-engage customers who haven't bought in 60 days with a discount on WhatsApp"
+}
+r = requests.post(f"{BASE}/campaigns/nl-preview", json=nl_payload)
+check("POST /campaigns/nl-preview returns 200", r.status_code == 200, f"got {r.status_code}")
+if r.status_code == 200:
+    nl_preview = r.json()
+    check("Has session_id", "session_id" in nl_preview)
+    check("Has intent_text", "intent_text" in nl_preview)
+    check("Has segment_params", "segment_params" in nl_preview)
+    check("Has whatsapp_message", "whatsapp_message" in nl_preview)
+    check("Has email_message", "email_message" in nl_preview)
+    check("Has channel_recommendation", "channel_recommendation" in nl_preview)
+    check("Has channel_reason", "channel_reason" in nl_preview)
+    check("Has segment_stats", "segment_stats" in nl_preview)
+    check("Has customer_count", "customer_count" in nl_preview)
+    check("Has campaign_name", "campaign_name" in nl_preview)
+
+    session_id = nl_preview.get("session_id")
+    segment_params = nl_preview.get("segment_params", {})
+    whatsapp_msg = nl_preview.get("whatsapp_message", "")
+    channel = nl_preview.get("channel_recommendation", "whatsapp")
+
+    # Test GET /campaigns/nl-session/{session_id}
+    print("\n--- Retrieve NL Session ---")
+    r_sess = requests.get(f"{BASE}/campaigns/nl-session/{session_id}")
+    check("GET /campaigns/nl-session/{id} returns 200", r_sess.status_code == 200, f"got {r_sess.status_code}")
+    if r_sess.status_code == 200:
+        sess_data = r_sess.json()
+        check("Session retrieves correct campaign name", sess_data.get("campaign_name") == nl_preview.get("campaign_name"))
+
+    # Test POST /campaigns/nl-preview Refinement
+    print("\n--- Refine NL Campaign ---")
+    ref_payload = {
+        "nl_input": "",
+        "session_id": session_id,
+        "refinement_text": "only customers in Mumbai"
+    }
+    r_ref = requests.post(f"{BASE}/campaigns/nl-preview", json=ref_payload)
+    check("Refined NL preview returns 200", r_ref.status_code == 200, f"got {r_ref.status_code}")
+    if r_ref.status_code == 200:
+        refined_preview = r_ref.json()
+        check("Refined preview has intent_text", "intent_text" in refined_preview)
+
+    # Test Confirming NL Campaign (V1 confirm endpoint with empty insight_id)
+    print("\n--- Confirm NL Campaign ---")
+    r_conf = requests.post(f"{BASE}/campaigns/confirm", json={
+        "insight_id": "",
+        "campaign_name": "NL Test Campaign",
+        "message_text": whatsapp_msg,
+        "channel": channel,
+        "segment_params": segment_params
+    })
+    check("Confirm NL campaign returns 201", r_conf.status_code == 201, f"got {r_conf.status_code}")
+
+
+
+# ═══════════════════════════════════════════════
 # FINAL REPORT
 # ═══════════════════════════════════════════════
 print("\n" + "="*60)

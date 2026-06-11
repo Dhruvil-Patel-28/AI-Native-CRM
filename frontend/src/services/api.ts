@@ -46,6 +46,12 @@ export interface CampaignPreview {
   customer_count: number
 }
 
+export interface NLPreviewResponse extends CampaignPreview {
+  session_id: string
+  campaign_name: string
+}
+
+
 export interface Campaign {
   id: string
   name: string
@@ -121,6 +127,35 @@ export async function previewCampaign(
     return null
   }
 }
+
+export async function nlPreviewCampaign(
+  nlInput: string,
+  sessionId?: string,
+  refinement?: string
+): Promise<NLPreviewResponse | null> {
+  try {
+    const response = await api.post<NLPreviewResponse>('/campaigns/nl-preview', {
+      nl_input: nlInput,
+      session_id: sessionId,
+      refinement_text: refinement,
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to parse NL preview:', error)
+    return null
+  }
+}
+
+export async function getNLSession(sessionId: string): Promise<NLPreviewResponse | null> {
+  try {
+    const response = await api.get<NLPreviewResponse>(`/campaigns/nl-session/${sessionId}`)
+    return response.data
+  } catch (error) {
+    console.error('Failed to retrieve NL session:', error)
+    return null
+  }
+}
+
 
 export async function confirmCampaign(data: {
   insight_id: string

@@ -201,3 +201,32 @@ class WebhookReceipt(BaseModel):
     message_id: str
     status: str = Field(pattern=r"^(delivered|opened|clicked|failed)$")
     timestamp: str
+
+
+# ---------------------------------------------------------------------------
+# Natural Language Campaign Schemas
+# ---------------------------------------------------------------------------
+
+
+class NLPreviewRequest(BaseModel):
+    """Request body for POST /campaigns/nl-preview."""
+
+    nl_input: str
+    session_id: str | None = None
+    refinement_text: str | None = None
+
+
+class NLPreviewResponse(BaseModel):
+    """Response returned for natural language previews and sessions."""
+
+    session_id: UUID
+    intent_text: str
+    segment_params: dict
+    whatsapp_message: str
+    email_message: str
+    channel_recommendation: str
+    channel_reason: str
+    segment_stats: SegmentStats
+    customer_count: int
+    campaign_name: str
+

@@ -362,3 +362,131 @@ def _fallback_summary(campaign_stats: dict) -> dict:
             f"but didn't open — a different message angle could recover additional orders."
         ),
     }
+
+
+def parse_nl_intent(nl_input: str, previous_data: dict | None = None, refinement: str | None = None) -> dict:
+    """
+    Parse a natural language goal input into a structured campaign plan.
+    Supports refinement if previous_data and refinement string are provided.
+    """
+    if refinement and previous_data:
+        system_prompt = (
+            "You are an AI campaign planner for Glow Studio, an Indian D2C skincare brand. "
+            "A marketer has described a campaign goal, and wants to refine the structured campaign "
+            "plan they previously generated. Update the campaign plan based on the refinement request. "
+            "Return JSON only.\n\n"
+            "Return this exact JSON structure:\n"
+            "{\n"
+            '  "intent_text": "Updated summary of campaign intent...",\n'
+            '  "segment_params": { "days_since_last_order_min": 60, "min_orders": 1 },\n'
+            '  "whatsapp_message": "Updated WhatsApp draft with {name} placeholder...",\n'
+            '  "email_message": "Updated Email draft with {name} placeholder...",\n'
+            '  "channel_recommendation": "whatsapp | email",\n'
+            '  "channel_reason": "Explanation for channel...",\n'
+            '  "campaign_name": "Updated Campaign Name"\n'
+            "}\n\n"
+            "Rules:\n"
+            "- Messages must include {name} placeholder for personalization\n"
+            "- WhatsApp message should be concise (under 200 chars)\n"
+            "- Email message should be more detailed (2-3 paragraphs)\n"
+            "- channel_recommendation must be 'whatsapp' or 'email'\n"
+            "- segment_params must be valid filter parameters for customer segmentation:\n"
+            "  * days_since_last_order_min (int)\n"
+            "  * days_since_last_order_max (int)\n"
+            "  * min_orders (int)\n"
+            "  * max_orders (int)\n"
+            "  * min_total_spent (float)\n"
+            "  * max_total_spent (float)\n"
+            "  * cities (list of strings, e.g. ['Mumbai', 'Delhi'])\n"
+            "  * product_categories (list of strings, e.g. ['Serum', 'Sunscreen'])\n"
+            "- Use Indian Rupees (₹) for all amounts\n"
+            "- Ensure the updates requested in the refinement are reflected in the plan"
+        )
+        user_prompt = (
+            f"Original Goal: {nl_input}\n"
+            f"Previous Campaign Plan: {json.dumps(previous_data)}\n"
+            f"Refinement Request: {refinement}\n\n"
+            "Generate the updated campaign plan."
+        )
+    else:
+        system_prompt = (
+            "You are an AI campaign planner for Glow Studio, an Indian D2C skincare brand. "
+            "A marketer has described what they want to do in plain English. "
+            "Extract their intent and convert it into a structured campaign plan. "
+            "Return JSON only.\n\n"
+            "Return this exact JSON structure:\n"
+            "{\n"
+            '  "intent_text": "You want to target X customers who...",\n'
+            '  "segment_params": { "days_since_last_order_min": 60, "min_orders": 1 },\n'
+            '  "whatsapp_message": "Hi {name}, ... Use code XYZ. Shop now: glowstudio.in",\n'
+            '  "email_message": "Longer version for email with more detail...",\n'
+            '  "channel_recommendation": "whatsapp",\n'
+            '  "channel_reason": "Best for D2C skincare engagement in India",\n'
+            '  "campaign_name": "Win-Back — June 2026"\n'
+            "}\n\n"
+            "Rules:\n"
+            "- intent_text should be a plain-English summary of campaign intent\n"
+            "- segment_params must be valid filter parameters for customer segmentation:\n"
+            "  * days_since_last_order_min (int)\n"
+            "  * days_since_last_order_max (int)\n"
+            "  * min_orders (int)\n"
+            "  * max_orders (int)\n"
+            "  * min_total_spent (float)\n"
+            "  * max_total_spent (float)\n"
+            "  * cities (list of strings, e.g. ['Mumbai', 'Delhi'])\n"
+            "  * product_categories (list of strings, e.g. ['Serum', 'Sunscreen'])\n"
+            "- Messages must include {name} placeholder for personalization\n"
+            "- WhatsApp message should be concise (under 200 chars)\n"
+            "- Email message should be more detailed (2-3 paragraphs)\n"
+            "- channel_recommendation must be 'whatsapp' or 'email'\n"
+            "- Use Indian Rupees (₹) for all amounts\n"
+            "- Messages should feel warm, personal, and on-brand for a skincare company"
+        )
+        user_prompt = f"Goal: {nl_input}\n\nGenerate a campaign plan based on this goal."
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7,
+        )
+        result = json.loads(response.choices[0].message.content)
+        return result
+
+    except Exception as e:
+        logger.error("Groq API error in parse_nl_intent: %s", e)
+        return _fallback_nl_parse(nl_input, previous_data, refinement)
+
+
+def _fallback_nl_parse(nl_input: str, previous_data: dict | None = None, refinement: str | None = None) -> dict:
+    """Fallback handler for natural language parsing if Groq is unavailable."""
+    from datetime import datetime
+    if previous_data:
+        data = dict(previous_data)
+        ref = (refinement or "").lower()
+        if "whatsapp" in ref:
+            data["channel_recommendation"] = "whatsapp"
+        elif "email" in ref:
+            data["channel_recommendation"] = "email"
+
+        data["intent_text"] = f"{data['intent_text']} (Refined: {refinement})"
+        return data
+
+    name = "Win-Back — " + datetime.now().strftime("%B %Y")
+    return {
+        "intent_text": f"You want to target customers based on your goal: '{nl_input}'",
+        "segment_params": {
+            "days_since_last_order_min": 60,
+            "min_orders": 1
+        },
+        "whatsapp_message": "Hi {name}, we miss you at Glow Studio! Come back with 15% off using code COMEBACK15: glowstudio.in",
+        "email_message": "Hi {name},\n\nWe miss you at Glow Studio! Use code COMEBACK15 for 15% off your next purchase: glowstudio.in\n\nBest,\nTeam Glow Studio",
+        "channel_recommendation": "whatsapp",
+        "channel_reason": "Recommended by default for D2C skincare brands in India.",
+        "campaign_name": name
+    }
+

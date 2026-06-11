@@ -10,14 +10,14 @@ Orchestrates the campaign lifecycle:
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AIInsight, Campaign, CampaignStatus, ChannelType, Message
+from models import AIInsight, Campaign, CampaignStatus, ChannelType, Message, NLSession
 from schemas import (
     CampaignConfirmRequest,
     CampaignConfirmResponse,
@@ -27,8 +27,10 @@ from schemas import (
     CampaignStatusResponse,
     MessageOut,
     SegmentStats,
+    NLPreviewRequest,
+    NLPreviewResponse,
 )
-from services.ai_service import preview_campaign, summarize_results
+from services.ai_service import preview_campaign, summarize_results, parse_nl_intent
 from services.campaign_service import fire_campaign
 from services.segment_service import build_segment, get_segment_stats
 
@@ -331,3 +333,110 @@ async def list_campaigns(
         )
         for c in campaigns
     ]
+
+
+@router.post("/nl-preview", response_model=NLPreviewResponse)
+async def post_nl_preview(
+    body: NLPreviewRequest,
+    db: Session = Depends(get_db),
+) -> NLPreviewResponse:
+    """
+    Generate or refine an AI structured campaign plan from natural language input.
+    Saves the parsed data as a temporary NLSession and returns it.
+    """
+    session = None
+    nl_input = body.nl_input
+    previous_data = None
+
+    if body.session_id:
+        session = (
+            db.query(NLSession)
+            .filter(NLSession.id == uuid.UUID(body.session_id))
+            .first()
+        )
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if not nl_input:
+            nl_input = session.nl_input
+        previous_data = session.parsed_data
+
+    # Parse using AI service
+    parsed_data = parse_nl_intent(
+        nl_input=nl_input,
+        previous_data=previous_data,
+        refinement=body.refinement_text,
+    )
+
+    # Build segment to get count & stats
+    segment_params = parsed_data.get("segment_params", {})
+    customers = build_segment(segment_params, db)
+    stats = get_segment_stats(customers, db)
+
+    # Save to DB session
+    now = datetime.now(timezone.utc)
+    if session:
+        session.nl_input = nl_input
+        session.parsed_data = parsed_data
+        session.expires_at = now + timedelta(hours=24)
+        db.commit()
+        db.refresh(session)
+    else:
+        session = NLSession(
+            id=uuid.uuid4(),
+            nl_input=nl_input,
+            parsed_data=parsed_data,
+            created_at=now,
+            expires_at=now + timedelta(hours=24),
+        )
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+    return NLPreviewResponse(
+        session_id=session.id,
+        intent_text=parsed_data.get("intent_text", ""),
+        segment_params=segment_params,
+        whatsapp_message=parsed_data.get("whatsapp_message", ""),
+        email_message=parsed_data.get("email_message", ""),
+        channel_recommendation=parsed_data.get("channel_recommendation", "whatsapp"),
+        channel_reason=parsed_data.get("channel_reason", ""),
+        segment_stats=SegmentStats(**stats),
+        customer_count=stats["count"],
+        campaign_name=parsed_data.get("campaign_name", "NL Campaign"),
+    )
+
+
+@router.get("/nl-session/{session_id}", response_model=NLPreviewResponse)
+async def get_nl_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+) -> NLPreviewResponse:
+    """
+    Retrieve campaign plan and stats for an existing natural language session.
+    """
+    session = (
+        db.query(NLSession)
+        .filter(NLSession.id == uuid.UUID(session_id))
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Build segment to get count & stats
+    segment_params = session.parsed_data.get("segment_params", {})
+    customers = build_segment(segment_params, db)
+    stats = get_segment_stats(customers, db)
+
+    return NLPreviewResponse(
+        session_id=session.id,
+        intent_text=session.parsed_data.get("intent_text", ""),
+        segment_params=segment_params,
+        whatsapp_message=session.parsed_data.get("whatsapp_message", ""),
+        email_message=session.parsed_data.get("email_message", ""),
+        channel_recommendation=session.parsed_data.get("channel_recommendation", "whatsapp"),
+        channel_reason=session.parsed_data.get("channel_reason", ""),
+        segment_stats=SegmentStats(**stats),
+        customer_count=stats["count"],
+        campaign_name=session.parsed_data.get("campaign_name", "NL Campaign"),
+    )
+

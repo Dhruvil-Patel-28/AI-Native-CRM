@@ -17,13 +17,15 @@ import MessageDraft from '../components/MessageDraft'
 import {
   previewCampaign,
   confirmCampaign,
+  nlPreviewCampaign,
+  getNLSession,
   type CampaignPreview,
 } from '../services/api'
 
 const STEPS = ['Understand', 'Segment', 'Message', 'Confirm'] as const
 
 export default function CampaignFlow() {
-  const { insightId } = useParams<{ insightId: string }>()
+  const { insightId, sessionId } = useParams<{ insightId?: string; sessionId?: string }>()
   const navigate = useNavigate()
 
   const [currentStep, setCurrentStep] = useState(0)
@@ -36,9 +38,20 @@ export default function CampaignFlow() {
   const [campaignName, setCampaignName] = useState('')
 
   const loadPreview = useCallback(async (refineText: string = '') => {
-    if (!insightId) return
+    if (!insightId && !sessionId) return
     setLoading(true)
-    const data = await previewCampaign(insightId, refineText)
+    let data: CampaignPreview | null = null
+    
+    if (insightId) {
+      data = await previewCampaign(insightId, refineText)
+    } else if (sessionId) {
+      if (refineText) {
+        data = await nlPreviewCampaign('', sessionId, refineText)
+      } else {
+        data = await getNLSession(sessionId)
+      }
+    }
+
     if (data) {
       setPreview(data)
       setSelectedChannel(data.channel_recommendation)
@@ -47,10 +60,11 @@ export default function CampaignFlow() {
           ? data.whatsapp_message
           : data.email_message
       )
-      setCampaignName(`Campaign — ${new Date().toLocaleDateString('en-IN')}`)
+      const name = (data as any).campaign_name || `Campaign — ${new Date().toLocaleDateString('en-IN')}`
+      setCampaignName(name)
     }
     setLoading(false)
-  }, [insightId])
+  }, [insightId, sessionId])
 
   useEffect(() => {
     loadPreview()
@@ -66,11 +80,11 @@ export default function CampaignFlow() {
   }
 
   const handleConfirm = async () => {
-    if (!insightId || !preview) return
+    if ((!insightId && !sessionId) || !preview) return
     setSending(true)
 
     const result = await confirmCampaign({
-      insight_id: insightId,
+      insight_id: insightId || '',
       campaign_name: campaignName,
       message_text: editedMessage,
       channel: selectedChannel,

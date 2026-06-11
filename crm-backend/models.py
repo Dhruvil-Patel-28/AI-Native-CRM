@@ -227,3 +227,22 @@ class AIInsight(Base):
         Index("ix_ai_insights_priority", "priority"),
         Index("ix_ai_insights_created_at", "created_at"),
     )
+
+
+class NLSession(Base):
+    """Temporary natural language session storage."""
+
+    __tablename__ = "nl_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    nl_input: Mapped[str] = mapped_column(Text, nullable=False)
+    parsed_data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+

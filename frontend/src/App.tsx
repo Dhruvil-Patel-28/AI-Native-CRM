@@ -30,6 +30,7 @@ function App() {
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/campaign/:insightId" element={<CampaignFlow />} />
+            <Route path="/campaign/nl/:sessionId" element={<CampaignFlow />} />
             <Route path="/results/:campaignId" element={<Results />} />
           </Routes>
         </main>
