@@ -121,7 +121,7 @@ export default function MessageDraft({
             <div className="rounded-[2rem] bg-white/[0.03] min-h-[420px] p-4 flex flex-col">
               {/* Chat Header */}
               <div className="flex items-center gap-3 pb-3 border-b border-white/[0.06] mb-4">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF6B9D] to-[#7C3AED] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#B4506E] to-[#7C3AED] flex items-center justify-center">
                   <span className="text-xs font-bold text-white">G</span>
                 </div>
                 <div>

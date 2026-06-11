@@ -166,14 +166,14 @@ export default function CampaignFlow() {
                 transition={{ duration: 0.3 }}
               >
                 <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-                  <IconSparkles size={20} className="text-[#FF6B9D]" />
+                  <IconSparkles size={20} className="text-[#B4506E]" />
                   Here's what I understood:
                 </h2>
 
                 {/* Intent Box */}
                 <div className="p-6 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-6">
                   <div className="flex gap-3">
-                    <div className="w-1 rounded-full bg-[#FF6B9D] flex-shrink-0" />
+                    <div className="w-1 rounded-full bg-[#B4506E] flex-shrink-0" />
                     <p className="text-text-primary leading-relaxed text-lg">
                       {preview.intent_text}
                     </p>
@@ -183,7 +183,7 @@ export default function CampaignFlow() {
                 {/* Channel Recommendation */}
                 <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-6">
                   <p className="text-sm text-text-secondary">
-                    <span className="font-semibold text-[#FF6B9D]">Recommended channel: </span>
+                    <span className="font-semibold text-[#B4506E]">Recommended channel: </span>
                     {preview.channel_recommendation === 'whatsapp' ? 'WhatsApp' : 'Email'}
                     {' — '}{preview.channel_reason}
                   </p>

@@ -101,7 +101,7 @@ function Sidebar({
     return location.pathname === path
   }
 
-  const accentColor = mode === 'guided' ? '#FF6B9D' : '#7C3AED'
+  const accentColor = mode === 'guided' ? '#B4506E' : '#7C3AED'
 
   return (
     <aside className="sidebar w-64 flex flex-col flex-shrink-0">
@@ -113,7 +113,7 @@ function Sidebar({
             style={{
               background:
                 mode === 'guided'
-                  ? 'linear-gradient(135deg, #FF6B9D, #FF3D7F)'
+                  ? 'linear-gradient(135deg, #B4506E, #8C2846)'
                   : 'linear-gradient(135deg, #7C3AED, #5B21B6)',
             }}
           >

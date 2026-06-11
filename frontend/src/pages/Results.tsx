@@ -22,8 +22,10 @@ import {
   IconMail,
 } from '@tabler/icons-react'
 import { getCampaignStatus, type CampaignStatus, type MessageRecord } from '../services/api'
+import { useMode } from '../components/Layout'
 
 export default function Results() {
+  const { mode } = useMode()
   const { campaignId } = useParams<{ campaignId: string }>()
   const navigate = useNavigate()
 
@@ -205,7 +207,7 @@ export default function Results() {
               className="glass-card p-6"
             >
               <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <IconSparkles size={16} className="text-[#FF6B9D]" />
+                <IconSparkles size={16} className={mode === 'guided' ? 'text-[#B4506E]' : 'text-[#7C3AED]'} />
                 Campaign Summary
               </h3>
 
@@ -215,7 +217,7 @@ export default function Results() {
                   return (
                     <div
                       key={idx}
-                      className="mt-4 p-4 rounded-xl bg-white/[0.03] border-l-2 border-[#FF6B9D]"
+                      className={`mt-4 p-4 rounded-xl bg-white/[0.03] border-l-2 ${mode === 'guided' ? 'border-[#B4506E]' : 'border-[#7C3AED]'}`}
                     >
                       <p className="text-sm text-text-primary leading-relaxed">
                         {paragraph}

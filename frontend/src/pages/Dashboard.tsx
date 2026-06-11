@@ -214,7 +214,7 @@ function GuidedView({
       {/* ─── Header ────────────────────────────────────── */}
       <header className="mb-8">
         <div className="flex items-center gap-2 mb-1">
-          <IconSparkles size={20} className="text-[#FF6B9D]" />
+          <IconSparkles size={20} className="text-[#B4506E]" />
           <h1 className="text-2xl font-bold text-text-primary">
             Good morning, Glow Studio
           </h1>
@@ -270,7 +270,7 @@ function GuidedView({
           {/* NL Entry Point */}
           <div className="glass-card p-6 mb-8">
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <IconSparkles size={16} className="text-[#FF6B9D]" />
+              <IconSparkles size={16} className="text-[#B4506E]" />
               What do you want to do today?
             </h2>
             <form onSubmit={onNlSubmit} className="relative flex items-center">
@@ -297,8 +297,8 @@ function GuidedView({
               </button>
             </form>
             {nlLoading && (
-              <div className="flex items-center gap-2 mt-3 text-sm text-[#FF6B9D] animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-[#FF6B9D]" />
+              <div className="flex items-center gap-2 mt-3 text-sm text-[#B4506E] animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-[#B4506E]" />
                 <span>AI is understanding your goal...</span>
               </div>
             )}

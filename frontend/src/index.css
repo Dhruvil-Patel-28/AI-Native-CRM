@@ -48,10 +48,10 @@ body {
 
 .app-shell.guided {
   background: linear-gradient(160deg,
-    #1A0810 0%,
-    #3D1225 35%,
-    #6B2840 65%,
-    #8B3A3A 100%);
+    #0D0608 0%,
+    #1A0A14 35%,
+    #2D1020 65%,
+    #3D1528 100%);
   background-attachment: fixed;
 }
 
@@ -85,8 +85,8 @@ body {
 }
 
 .app-shell.guided .glass-card:hover {
-  border-color: rgba(255, 107, 157, 0.2);
-  box-shadow: 0 0 30px rgba(255, 107, 157, 0.06);
+  border-color: rgba(180, 80, 110, 0.4);
+  box-shadow: 0 0 30px rgba(140, 40, 70, 0.1);
 }
 
 .app-shell.autopilot .glass-card {
@@ -128,12 +128,15 @@ body {
 }
 
 .app-shell.guided .btn-accent {
-  background: #FF6B9D;
+  background: rgba(140, 40, 70, 0.25);
+  border: 1px solid rgba(160, 60, 90, 0.4);
+  color: rgba(220, 150, 175, 0.95);
 }
 
 .app-shell.guided .btn-accent:hover {
-  background: #FF85B1;
-  box-shadow: 0 8px 25px rgba(255, 107, 157, 0.3);
+  background: rgba(140, 40, 70, 0.35);
+  border-color: rgba(160, 60, 90, 0.55);
+  box-shadow: 0 8px 25px rgba(140, 40, 70, 0.2);
 }
 
 .app-shell.autopilot .btn-accent {
@@ -197,8 +200,8 @@ body {
 }
 
 .app-shell.guided .input-glass:focus {
-  border-color: rgba(255, 107, 157, 0.5);
-  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+  border-color: rgba(180, 80, 110, 0.6);
+  box-shadow: 0 0 0 3px rgba(140, 40, 70, 0.25);
 }
 
 .app-shell.autopilot .input-glass:focus {
@@ -243,8 +246,8 @@ body {
 /* ─── Glow Effects ────────────────────────────────────────── */
 
 .glow-guided {
-  box-shadow: 0 0 40px rgba(255, 107, 157, 0.12),
-              0 0 80px rgba(255, 107, 157, 0.06);
+  box-shadow: 0 0 40px rgba(180, 80, 110, 0.15),
+              0 0 80px rgba(140, 40, 70, 0.08);
 }
 
 .glow-autopilot {
@@ -332,8 +335,12 @@ body {
 }
 
 .mode-switcher-indicator.guided {
-  background: linear-gradient(135deg, rgba(255, 107, 157, 0.2), rgba(255, 107, 157, 0.1));
-  border: 1px solid rgba(255, 107, 157, 0.2);
+  background: rgba(140, 40, 70, 0.2);
+  border: 1px solid rgba(160, 60, 90, 0.3);
+}
+
+.app-shell.guided .mode-switcher-btn.active {
+  color: rgba(220, 150, 175, 0.9);
 }
 
 .mode-switcher-indicator.autopilot {

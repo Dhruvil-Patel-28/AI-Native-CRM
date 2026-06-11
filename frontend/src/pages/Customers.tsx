@@ -17,8 +17,10 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { getCustomerStats, uploadCustomers, type CustomerStats, type UploadResult } from '../services/api'
+import { useMode } from '../components/Layout'
 
 export default function Customers() {
+  const { mode } = useMode()
   const [stats, setStats] = useState<CustomerStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -142,7 +144,9 @@ export default function Customers() {
         <div
           className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-200 cursor-pointer ${
             dragActive
-              ? 'border-[#FF6B9D] bg-[#FF6B9D]/5'
+              ? mode === 'guided'
+                ? 'border-[#B4506E] bg-[#B4506E]/5'
+                : 'border-[#7C3AED] bg-[#7C3AED]/5'
               : 'border-white/[0.1] hover:border-white/[0.2] hover:bg-white/[0.02]'
           }`}
           onDragOver={(e) => { e.preventDefault(); setDragActive(true) }}
