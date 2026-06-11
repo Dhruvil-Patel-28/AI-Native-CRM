@@ -5,9 +5,18 @@
  * CSV upload interface for importing new customers and orders.
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import {
+  IconUsers,
+  IconCurrencyRupee,
+  IconSend,
+  IconShoppingCart,
+  IconUpload,
+  IconCheck,
+  IconX,
+} from '@tabler/icons-react'
 import { getCustomerStats, uploadCustomers, type CustomerStats, type UploadResult } from '../services/api'
-import { useEffect } from 'react'
 
 export default function Customers() {
   const [stats, setStats] = useState<CustomerStats | null>(null)
@@ -65,7 +74,8 @@ export default function Customers() {
     <div className="p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text-primary mb-1">
+        <h1 className="text-2xl font-bold text-text-primary mb-1 flex items-center gap-2">
+          <IconUsers size={22} />
           Customers
         </h1>
         <p className="text-text-secondary text-sm">
@@ -89,42 +99,51 @@ export default function Customers() {
             <StatCard
               label="Total Customers"
               value={stats.total_customers.toLocaleString('en-IN')}
-              icon="👥"
+              icon={<IconUsers size={18} />}
+              delay={0}
             />
             <StatCard
               label="Total Revenue"
               value={`₹${stats.total_revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-              icon="💰"
+              icon={<IconCurrencyRupee size={18} />}
+              delay={0.05}
             />
             <StatCard
               label="Campaigns Sent"
               value={stats.campaigns_sent.toString()}
-              icon="📨"
+              icon={<IconSend size={18} />}
+              delay={0.1}
             />
             <StatCard
               label="Avg Order Value"
               value={`₹${stats.avg_order_value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-              icon="🛒"
+              icon={<IconShoppingCart size={18} />}
+              delay={0.15}
             />
           </>
         ) : null}
       </div>
 
       {/* CSV Upload Section */}
-      <div className="glass-card p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="glass-card p-6"
+      >
         <h2 className="text-lg font-semibold text-text-primary mb-1">
           Import Customers
         </h2>
         <p className="text-sm text-text-muted mb-6">
-          Upload a CSV file with columns: <code className="text-xs bg-surface-bg px-1.5 py-0.5 rounded">name, email, phone, city, order_date, amount, product_category</code>
+          Upload a CSV file with columns: <code className="text-xs bg-white/[0.06] px-1.5 py-0.5 rounded">name, email, phone, city, order_date, amount, product_category</code>
         </p>
 
         {/* Drop Zone */}
         <div
-          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 cursor-pointer ${
+          className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-200 cursor-pointer ${
             dragActive
-              ? 'border-accent bg-accent/5'
-              : 'border-surface-border hover:border-accent/30 hover:bg-surface-hover/30'
+              ? 'border-[#FF6B9D] bg-[#FF6B9D]/5'
+              : 'border-white/[0.1] hover:border-white/[0.2] hover:bg-white/[0.02]'
           }`}
           onDragOver={(e) => { e.preventDefault(); setDragActive(true) }}
           onDragLeave={() => setDragActive(false)}
@@ -143,14 +162,12 @@ export default function Customers() {
 
           {uploading ? (
             <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3" />
+              <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/60 animate-spin mb-3" />
               <p className="text-text-secondary font-medium">Uploading...</p>
             </div>
           ) : (
             <>
-              <svg className="w-10 h-10 text-text-muted mx-auto mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-              </svg>
+              <IconUpload size={32} className="text-text-muted mx-auto mb-3" />
               <p className="text-text-primary font-medium mb-1">
                 Drop your CSV file here or click to browse
               </p>
@@ -163,39 +180,48 @@ export default function Customers() {
 
         {/* Upload Result */}
         {uploadResult && (
-          <div className="mt-4 p-4 rounded-lg bg-emerald-400/5 border border-emerald-400/20 animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 p-4 rounded-xl bg-emerald-400/5 border border-emerald-400/20"
+          >
             <div className="flex items-center gap-2 mb-1">
-              <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
+              <IconCheck size={16} className="text-emerald-400" />
               <p className="text-sm font-medium text-emerald-400">Upload successful</p>
             </div>
             <p className="text-xs text-text-secondary">
               Imported {uploadResult.customers_imported} new customers and {uploadResult.orders_imported} orders
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* Upload Error */}
         {uploadError && (
-          <div className="mt-4 p-4 rounded-lg bg-error/5 border border-error/20 animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 p-4 rounded-xl bg-error/5 border border-error/20"
+          >
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-error" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
+              <IconX size={16} className="text-error" />
               <p className="text-sm text-error">{uploadError}</p>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* CSV Format Guide */}
-      <div className="glass-card p-6 mt-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="glass-card p-6 mt-4"
+      >
         <h3 className="text-sm font-semibold text-text-primary mb-3">CSV Format Example</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-surface-border">
+              <tr className="border-b border-white/[0.06]">
                 <th className="text-left py-2 px-3 text-text-muted font-medium">name</th>
                 <th className="text-left py-2 px-3 text-text-muted font-medium">email</th>
                 <th className="text-left py-2 px-3 text-text-muted font-medium">phone</th>
@@ -206,7 +232,7 @@ export default function Customers() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-surface-border/50">
+              <tr className="border-b border-white/[0.04]">
                 <td className="py-2 px-3 text-text-secondary">Priya Sharma</td>
                 <td className="py-2 px-3 text-text-secondary">priya@email.com</td>
                 <td className="py-2 px-3 text-text-secondary">+919876543210</td>
@@ -230,19 +256,34 @@ export default function Customers() {
         <p className="text-xs text-text-muted mt-3">
           Valid categories: Moisturizer, Serum, Sunscreen, Cleanser, Toner
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: string }) {
+function StatCard({
+  label,
+  value,
+  icon,
+  delay,
+}: {
+  label: string
+  value: string
+  icon: React.ReactNode
+  delay: number
+}) {
   return (
-    <div className="glass-card p-5 animate-fade-in">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="glass-card p-5"
+    >
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{icon}</span>
+        <span className="text-text-muted">{icon}</span>
         <p className="text-xs text-text-muted">{label}</p>
       </div>
       <p className="text-2xl font-bold text-text-primary">{value}</p>
-    </div>
+    </motion.div>
   )
 }

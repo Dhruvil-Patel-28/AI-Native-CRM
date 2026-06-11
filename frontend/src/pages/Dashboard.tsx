@@ -1,17 +1,34 @@
 /**
- * Dashboard — main landing page for Glow Studio CRM.
+ * Dashboard — main landing page with dual mode views.
  *
- * Layout:
- *   - Header with greeting and 4 stat pills
- *   - Two-column body:
- *     Left (60%): AI Insight cards
- *     Right (40%): Recent Campaigns
+ * GUIDED MODE (default):
+ *   - NL input → AI insight cards → Recent campaigns
+ *   - Warm rose gradient aesthetic
+ *
+ * AUTOPILOT MODE:
+ *   - Hero goal input → AI handles everything
+ *   - Deep indigo/purple aesthetic
  */
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  IconUsers,
+  IconCurrencyRupee,
+  IconSend,
+  IconShoppingCart,
+  IconArrowRight,
+  IconRefresh,
+  IconBolt,
+  IconPlayerPlay,
+  IconSparkles,
+  IconRocket,
+  IconInfoCircle,
+} from '@tabler/icons-react'
 import InsightCard from '../components/InsightCard'
 import CampaignStats from '../components/CampaignStats'
+import { useMode } from '../components/Layout'
 import {
   getInsights,
   getCampaigns,
@@ -24,44 +41,35 @@ import {
 } from '../services/api'
 
 export default function Dashboard() {
+  const { mode } = useMode()
   const [stats, setStats] = useState<CustomerStats | null>(null)
   const [insights, setInsights] = useState<Insight[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [insightsLoading, setInsightsLoading] = useState(true)
   const [statsLoading, setStatsLoading] = useState(true)
 
+  // NL input state (Guided mode)
   const [nlInput, setNlInput] = useState('')
   const [nlLoading, setNlLoading] = useState(false)
+
+  // Autopilot state
+  const [autopilotGoal, setAutopilotGoal] = useState('')
+  const [autopilotLoading, setAutopilotLoading] = useState(false)
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
+
   const navigate = useNavigate()
+
+  const LOADING_MESSAGES = [
+    "Agent is analyzing your customer data...",
+    "Building the optimal segment...",
+    "Crafting personalized messages...",
+    "Preparing campaign plan...",
+  ]
 
   useEffect(() => {
     loadData()
   }, [])
 
-  const handleNlSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!nlInput.trim() || nlLoading) return
-    setNlLoading(true)
-    const result = await nlPreviewCampaign(nlInput)
-    if (result) {
-      navigate(`/campaign/nl/${result.session_id}`)
-    } else {
-      alert("Failed to parse campaign preview. Please check your query and try again.")
-    }
-    setNlLoading(false)
-  }
- 
-  const [autopilotGoal, setAutopilotGoal] = useState('')
-  const [autopilotLoading, setAutopilotLoading] = useState(false)
-  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
- 
-  const LOADING_MESSAGES = [
-    "Agent is analyzing your customer data...",
-    "Building the optimal segment...",
-    "Crafting personalized messages...",
-    "Preparing campaign plan..."
-  ]
- 
   useEffect(() => {
     let interval: any
     if (autopilotLoading) {
@@ -72,19 +80,6 @@ export default function Dashboard() {
     }
     return () => clearInterval(interval)
   }, [autopilotLoading])
- 
-  const handleAutopilotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!autopilotGoal.trim() || autopilotLoading) return
-    setAutopilotLoading(true)
-    const result = await runAutopilot(autopilotGoal)
-    if (result) {
-      navigate(`/autopilot/${result.run_id}`)
-    } else {
-      alert("Failed to initialize Autopilot agent campaign planner. Please try again.")
-    }
-    setAutopilotLoading(false)
-  }
 
   const loadData = async () => {
     setStatsLoading(true)
@@ -111,13 +106,119 @@ export default function Dashboard() {
     setInsightsLoading(false)
   }
 
+  const handleNlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!nlInput.trim() || nlLoading) return
+    setNlLoading(true)
+    const result = await nlPreviewCampaign(nlInput)
+    if (result) {
+      navigate(`/campaign/nl/${result.session_id}`)
+    } else {
+      alert("Failed to parse campaign preview. Please check your query and try again.")
+    }
+    setNlLoading(false)
+  }
+
+  const handleAutopilotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!autopilotGoal.trim() || autopilotLoading) return
+    setAutopilotLoading(true)
+    const result = await runAutopilot(autopilotGoal)
+    if (result) {
+      navigate(`/autopilot/${result.run_id}`)
+    } else {
+      alert("Failed to initialize Autopilot agent campaign planner. Please try again.")
+    }
+    setAutopilotLoading(false)
+  }
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      <AnimatePresence mode="wait">
+        {mode === 'guided' ? (
+          <motion.div
+            key="guided-dashboard"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35 }}
+          >
+            <GuidedView
+              stats={stats}
+              statsLoading={statsLoading}
+              insights={insights}
+              insightsLoading={insightsLoading}
+              campaigns={campaigns}
+              nlInput={nlInput}
+              nlLoading={nlLoading}
+              onNlInputChange={setNlInput}
+              onNlSubmit={handleNlSubmit}
+              onRefreshInsights={refreshInsights}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="autopilot-dashboard"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35 }}
+          >
+            <AutopilotView
+              stats={stats}
+              statsLoading={statsLoading}
+              campaigns={campaigns}
+              autopilotGoal={autopilotGoal}
+              autopilotLoading={autopilotLoading}
+              loadingMsgIdx={loadingMsgIdx}
+              loadingMessages={LOADING_MESSAGES}
+              onGoalChange={setAutopilotGoal}
+              onSubmit={handleAutopilotSubmit}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GUIDED VIEW
+// ═══════════════════════════════════════════════════════════════
+
+function GuidedView({
+  stats,
+  statsLoading,
+  insights,
+  insightsLoading,
+  campaigns,
+  nlInput,
+  nlLoading,
+  onNlInputChange,
+  onNlSubmit,
+  onRefreshInsights,
+}: {
+  stats: CustomerStats | null
+  statsLoading: boolean
+  insights: Insight[]
+  insightsLoading: boolean
+  campaigns: Campaign[]
+  nlInput: string
+  nlLoading: boolean
+  onNlInputChange: (v: string) => void
+  onNlSubmit: (e: React.FormEvent) => void
+  onRefreshInsights: () => void
+}) {
+  return (
+    <>
       {/* ─── Header ────────────────────────────────────── */}
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-text-primary mb-1">
-          Good morning, Glow Studio 👋
-        </h1>
+        <div className="flex items-center gap-2 mb-1">
+          <IconSparkles size={20} className="text-[#FF6B9D]" />
+          <h1 className="text-2xl font-bold text-text-primary">
+            Good morning, Glow Studio
+          </h1>
+        </div>
         <p className="text-text-secondary text-sm">
           Here's what's happening with your customers today
         </p>
@@ -136,22 +237,26 @@ export default function Dashboard() {
               <StatPill
                 label="Total Customers"
                 value={stats.total_customers.toLocaleString('en-IN')}
-                icon={<UsersIcon />}
+                icon={<IconUsers size={18} />}
+                delay={0}
               />
               <StatPill
                 label="Total Revenue"
                 value={`₹${stats.total_revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-                icon={<RevenueIcon />}
+                icon={<IconCurrencyRupee size={18} />}
+                delay={0.05}
               />
               <StatPill
                 label="Campaigns Sent"
                 value={stats.campaigns_sent.toString()}
-                icon={<CampaignSentIcon />}
+                icon={<IconSend size={18} />}
+                delay={0.1}
               />
               <StatPill
                 label="Avg Order Value"
                 value={`₹${stats.avg_order_value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-                icon={<OrderValueIcon />}
+                icon={<IconShoppingCart size={18} />}
+                delay={0.15}
               />
             </>
           ) : null}
@@ -162,42 +267,38 @@ export default function Dashboard() {
       <div className="grid grid-cols-5 gap-8">
         {/* Left: AI Insights (3/5 = 60%) */}
         <section className="col-span-3" id="insights-section">
-          {/* V2: Natural Language Entry Point */}
-          <div className="glass-card p-6 mb-8 animate-fade-in">
-            <h2 className="text-md font-semibold text-text-primary mb-3">
+          {/* NL Entry Point */}
+          <div className="glass-card p-6 mb-8">
+            <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <IconSparkles size={16} className="text-[#FF6B9D]" />
               What do you want to do today?
             </h2>
-            <form onSubmit={handleNlSubmit} className="relative flex items-center">
+            <form onSubmit={onNlSubmit} className="relative flex items-center">
               <input
                 type="text"
                 value={nlInput}
-                onChange={(e) => setNlInput(e.target.value)}
+                onChange={(e) => onNlInputChange(e.target.value)}
                 disabled={nlLoading}
                 placeholder="Describe what you want to do... e.g. 'Reach loyal customers before Diwali'"
-                className="w-full px-5 py-4 pr-14 rounded-xl bg-surface-bg border border-surface-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors disabled:opacity-50"
+                className="input-glass pr-14"
                 id="nl-goal-input"
               />
               <button
                 type="submit"
                 disabled={nlLoading || !nlInput.trim()}
-                className="absolute right-3 p-2.5 rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="absolute right-2 p-2.5 rounded-xl btn-accent !px-3 !py-2.5"
                 id="nl-submit-btn"
               >
                 {nlLoading ? (
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                  </svg>
+                  <IconArrowRight size={18} />
                 )}
               </button>
             </form>
             {nlLoading && (
-              <div className="flex items-center gap-2 mt-3 text-sm text-accent animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-accent" />
+              <div className="flex items-center gap-2 mt-3 text-sm text-[#FF6B9D] animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-[#FF6B9D]" />
                 <span>AI is understanding your goal...</span>
               </div>
             )}
@@ -206,77 +307,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* V3: Autopilot Entry Point */}
-          <div className="bg-gradient-to-br from-accent/10 to-purple-500/5 border border-accent/20 p-6 rounded-2xl mb-8 animate-fade-in">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="p-1.5 rounded-lg bg-accent/20 text-accent flex items-center justify-center">
-                <svg className="w-5 h-5 text-accent animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 14h10l-2 8 10-12H12l2-8z" />
-                </svg>
-              </span>
-              <div>
-                <h2 className="text-md font-bold text-text-primary">Autopilot Mode</h2>
-                <p className="text-xs text-text-muted">Give a broad goal. AI handles everything.</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleAutopilotSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs text-text-secondary block mb-1.5 font-medium">
-                  What's your goal this week?
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    value={autopilotGoal}
-                    onChange={(e) => setAutopilotGoal(e.target.value)}
-                    disabled={autopilotLoading}
-                    placeholder="e.g. Increase repeat purchases, Re-engage lapsed customers, Maximize revenue"
-                    className="w-full px-5 py-4 pr-36 rounded-xl bg-surface-bg border border-surface-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-all disabled:opacity-50"
-                    id="autopilot-goal-input"
-                  />
-                  <button
-                    type="submit"
-                    disabled={autopilotLoading || !autopilotGoal.trim()}
-                    className="absolute right-2 px-5 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-accent/20"
-                    id="autopilot-submit-btn"
-                  >
-                    {autopilotLoading ? (
-                      <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Thinking...
-                      </>
-                    ) : (
-                      <>
-                        Let AI take over
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {autopilotLoading && (
-              <div className="flex items-center gap-2 mt-4 text-sm text-accent font-medium bg-accent/5 border border-accent/10 px-4 py-3 rounded-lg animate-pulse">
-                <div className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin flex-shrink-0" />
-                <span>{LOADING_MESSAGES[loadingMsgIdx]}</span>
-              </div>
-            )}
-
-            <p className="text-[10px] text-text-muted mt-3 italic flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-              </svg>
-              AI will plan and propose a complete campaign. You approve before anything sends.
-            </p>
-          </div>
-
+          {/* Insights Header */}
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
@@ -287,17 +318,15 @@ export default function Dashboard() {
               </p>
             </div>
             <button
-              onClick={refreshInsights}
+              onClick={onRefreshInsights}
               disabled={insightsLoading}
-              className="p-2 rounded-lg border border-surface-border text-text-muted hover:text-text-primary hover:border-accent/30 transition-all duration-200 disabled:opacity-50"
+              className="p-2 rounded-xl glass-card !border-transparent hover:!border-[rgba(255,107,157,0.2)] text-text-muted hover:text-text-primary transition-all duration-200 disabled:opacity-50"
               id="refresh-insights-btn"
             >
-              <svg
-                className={`w-4 h-4 ${insightsLoading ? 'animate-spin' : ''}`}
-                fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
-              </svg>
+              <IconRefresh
+                size={16}
+                className={insightsLoading ? 'animate-spin' : ''}
+              />
             </button>
           </div>
 
@@ -341,30 +370,224 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
-    </div>
+    </>
   )
 }
 
-// ─── Sub-components ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// AUTOPILOT VIEW
+// ═══════════════════════════════════════════════════════════════
 
-function StatPill({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function AutopilotView({
+  stats,
+  statsLoading,
+  campaigns,
+  autopilotGoal,
+  autopilotLoading,
+  loadingMsgIdx,
+  loadingMessages,
+  onGoalChange,
+  onSubmit,
+}: {
+  stats: CustomerStats | null
+  statsLoading: boolean
+  campaigns: Campaign[]
+  autopilotGoal: string
+  autopilotLoading: boolean
+  loadingMsgIdx: number
+  loadingMessages: string[]
+  onGoalChange: (v: string) => void
+  onSubmit: (e: React.FormEvent) => void
+}) {
+
   return (
-    <div className="glass-card p-4 flex items-center gap-3 animate-fade-in">
-      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+    <>
+      {/* ─── Header ────────────────────────────────────── */}
+      <header className="mb-10">
+        <div className="flex items-center gap-2 mb-1">
+          <IconBolt size={20} className="text-[#7C3AED]" />
+          <h1 className="text-2xl font-bold text-text-primary">
+            Autopilot Mode
+          </h1>
+        </div>
+        <p className="text-text-secondary text-sm">
+          Give AI a goal. It handles segment, copy, channel, and timing.
+        </p>
+      </header>
+
+      {/* ─── Hero Goal Input ───────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="glass-card p-8 mb-8 glow-autopilot"
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-[#7C3AED]/20 flex items-center justify-center">
+            <IconBolt size={22} className="text-[#7C3AED]" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-text-primary">
+              What's your goal?
+            </h2>
+            <p className="text-xs text-text-muted">
+              Describe your objective in natural language
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit}>
+          <div className="relative mb-4">
+            <input
+              type="text"
+              value={autopilotGoal}
+              onChange={(e) => onGoalChange(e.target.value)}
+              disabled={autopilotLoading}
+              placeholder="e.g. Increase repeat purchases, Re-engage lapsed customers, Maximize revenue..."
+              className="input-glass !py-4 !text-base pr-44"
+              id="autopilot-goal-input"
+            />
+            <button
+              type="submit"
+              disabled={autopilotLoading || !autopilotGoal.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 btn-accent !rounded-xl !px-5 !py-2.5 !text-xs !font-bold flex items-center gap-1.5 shadow-lg"
+              style={{ boxShadow: '0 4px 20px rgba(124,58,237,0.25)' }}
+              id="autopilot-submit-btn"
+            >
+              {autopilotLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Thinking...
+                </>
+              ) : (
+                <>
+                  Let AI take over
+                  <IconArrowRight size={14} />
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {autopilotLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 text-sm text-[#7C3AED] font-medium bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-4 py-3 rounded-xl"
+          >
+            <div className="w-4 h-4 rounded-full border-2 border-[#7C3AED] border-t-transparent animate-spin flex-shrink-0" />
+            <span>{loadingMessages[loadingMsgIdx]}</span>
+          </motion.div>
+        )}
+
+        <p className="text-[10px] text-text-muted mt-4 italic flex items-center gap-1.5">
+          <IconInfoCircle size={14} />
+          AI will plan and propose a complete campaign. You approve before anything sends.
+        </p>
+      </motion.div>
+
+      {/* ─── Stats Row ─────────────────────────────────── */}
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        {statsLoading ? (
+          <>
+            <StatPillSkeleton />
+            <StatPillSkeleton />
+            <StatPillSkeleton />
+            <StatPillSkeleton />
+          </>
+        ) : stats ? (
+          <>
+            <StatPill
+              label="Total Customers"
+              value={stats.total_customers.toLocaleString('en-IN')}
+              icon={<IconUsers size={18} />}
+              delay={0}
+            />
+            <StatPill
+              label="Total Revenue"
+              value={`₹${stats.total_revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+              icon={<IconCurrencyRupee size={18} />}
+              delay={0.05}
+            />
+            <StatPill
+              label="Campaigns Sent"
+              value={stats.campaigns_sent.toString()}
+              icon={<IconSend size={18} />}
+              delay={0.1}
+            />
+            <StatPill
+              label="Avg Order Value"
+              value={`₹${stats.avg_order_value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+              icon={<IconShoppingCart size={18} />}
+              delay={0.15}
+            />
+          </>
+        ) : null}
+      </div>
+
+      {/* ─── Recent Campaigns ──────────────────────────── */}
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <IconPlayerPlay size={18} className="text-[#7C3AED]" />
+          Recent Campaigns
+        </h2>
+        <div className="grid grid-cols-2 gap-4">
+          {campaigns.length > 0 ? (
+            campaigns.slice(0, 4).map((campaign, idx) => (
+              <CampaignStats key={campaign.id} campaign={campaign} index={idx} />
+            ))
+          ) : (
+            <div className="glass-card p-8 text-center col-span-2">
+              <IconRocket size={32} className="text-text-muted mx-auto mb-2" />
+              <p className="text-text-muted text-sm">No campaigns yet</p>
+              <p className="text-text-muted text-xs mt-1">
+                Set a goal above and let AI create your first campaign
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUB-COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+
+function StatPill({
+  label,
+  value,
+  icon,
+  delay,
+}: {
+  label: string
+  value: string
+  icon: React.ReactNode
+  delay: number
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
+      className="glass-card p-4 flex items-center gap-3"
+    >
+      <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center text-text-secondary flex-shrink-0">
         {icon}
       </div>
       <div>
         <p className="text-xs text-text-muted">{label}</p>
         <p className="text-lg font-bold text-text-primary">{value}</p>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
 function StatPillSkeleton() {
   return (
     <div className="glass-card p-4 flex items-center gap-3">
-      <div className="skeleton w-10 h-10 rounded-lg" />
+      <div className="skeleton w-10 h-10 rounded-xl" />
       <div className="flex-1">
         <div className="skeleton h-3 w-20 mb-2" />
         <div className="skeleton h-5 w-16" />
@@ -384,41 +607,7 @@ function InsightSkeleton() {
         <div className="skeleton h-6 w-24 rounded-full" />
         <div className="skeleton h-6 w-20 rounded-full" />
       </div>
-      <div className="skeleton h-10 w-full rounded-lg" />
+      <div className="skeleton h-10 w-full rounded-xl" />
     </div>
-  )
-}
-
-// ─── Icons ───────────────────────────────────────────────────
-
-function UsersIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-    </svg>
-  )
-}
-
-function RevenueIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-  )
-}
-
-function CampaignSentIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-    </svg>
-  )
-}
-
-function OrderValueIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-    </svg>
   )
 }

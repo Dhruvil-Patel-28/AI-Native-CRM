@@ -7,11 +7,20 @@
  *   3. Message — Edit message with channel tabs + phone mockup
  *   4. Confirm — Review and send
  *
- * URL param: insightId (from the insight card's "Run Campaign" button)
+ * URL param: insightId or sessionId
  */
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  IconCheck,
+  IconArrowRight,
+  IconArrowLeft,
+  IconAlertTriangle,
+  IconRocket,
+  IconSparkles,
+} from '@tabler/icons-react'
 import SegmentPreview from '../components/SegmentPreview'
 import MessageDraft from '../components/MessageDraft'
 import {
@@ -105,23 +114,24 @@ export default function CampaignFlow() {
           {STEPS.map((step, idx) => (
             <div key={step} className="flex items-center">
               <div className="flex items-center gap-2">
-                <div
+                <motion.div
+                  animate={{
+                    scale: idx === currentStep ? 1.1 : 1,
+                  }}
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                     idx < currentStep
-                      ? 'bg-accent text-white'
+                      ? 'btn-accent !p-0'
                       : idx === currentStep
-                        ? 'bg-accent text-white ring-4 ring-accent/20'
-                        : 'bg-surface-card text-text-muted border border-surface-border'
+                        ? 'btn-accent !p-0 ring-4 ring-white/10'
+                        : 'bg-white/[0.06] text-text-muted border border-white/[0.08]'
                   }`}
                 >
                   {idx < currentStep ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
+                    <IconCheck size={14} strokeWidth={3} />
                   ) : (
                     idx + 1
                   )}
-                </div>
+                </motion.div>
                 <span className={`text-sm font-medium ${
                   idx <= currentStep ? 'text-text-primary' : 'text-text-muted'
                 }`}>
@@ -130,7 +140,7 @@ export default function CampaignFlow() {
               </div>
               {idx < STEPS.length - 1 && (
                 <div className={`w-16 h-0.5 mx-3 rounded-full transition-colors duration-300 ${
-                  idx < currentStep ? 'bg-accent' : 'bg-surface-border'
+                  idx < currentStep ? 'bg-white/20' : 'bg-white/[0.06]'
                 }`} />
               )}
             </div>
@@ -145,18 +155,25 @@ export default function CampaignFlow() {
         ) : !preview ? (
           <ErrorState onRetry={() => loadPreview()} />
         ) : (
-          <>
+          <AnimatePresence mode="wait">
             {/* Step 1: Understand */}
             {currentStep === 0 && (
-              <div className="animate-fade-in">
-                <h2 className="text-xl font-bold text-text-primary mb-6">
+              <motion.div
+                key="step-0"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
+                  <IconSparkles size={20} className="text-[#FF6B9D]" />
                   Here's what I understood:
                 </h2>
 
                 {/* Intent Box */}
-                <div className="p-6 rounded-xl bg-accent/5 border border-accent/10 mb-6">
+                <div className="p-6 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-6">
                   <div className="flex gap-3">
-                    <div className="w-1 rounded-full bg-accent flex-shrink-0" />
+                    <div className="w-1 rounded-full bg-[#FF6B9D] flex-shrink-0" />
                     <p className="text-text-primary leading-relaxed text-lg">
                       {preview.intent_text}
                     </p>
@@ -164,9 +181,9 @@ export default function CampaignFlow() {
                 </div>
 
                 {/* Channel Recommendation */}
-                <div className="p-4 rounded-lg bg-surface-bg border border-surface-border mb-6">
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-6">
                   <p className="text-sm text-text-secondary">
-                    <span className="font-semibold text-accent">Recommended channel: </span>
+                    <span className="font-semibold text-[#FF6B9D]">Recommended channel: </span>
                     {preview.channel_recommendation === 'whatsapp' ? 'WhatsApp' : 'Email'}
                     {' — '}{preview.channel_reason}
                   </p>
@@ -183,33 +200,39 @@ export default function CampaignFlow() {
                       value={refinement}
                       onChange={(e) => setRefinement(e.target.value)}
                       placeholder="e.g. Focus on customers in Mumbai only"
-                      className="flex-1 px-4 py-3 rounded-lg bg-surface-bg border border-surface-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors"
+                      className="input-glass flex-1"
                       id="refinement-input"
                     />
                     <button
                       onClick={handleRefine}
                       disabled={!refinement.trim()}
-                      className="px-5 py-3 rounded-lg border border-surface-border text-text-secondary text-sm font-medium hover:border-accent/30 hover:text-text-primary transition-all disabled:opacity-30"
+                      className="btn-outline !text-sm"
                       id="refine-btn"
                     >
-                      Refine →
+                      Refine <IconArrowRight size={14} />
                     </button>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setCurrentStep(1)}
-                  className="w-full py-3 rounded-lg bg-accent hover:bg-accent-hover text-white font-semibold transition-all duration-200"
+                  className="w-full py-3 rounded-xl btn-accent font-semibold"
                   id="step1-next-btn"
                 >
-                  Looks right →
+                  Looks right <IconArrowRight size={16} />
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {/* Step 2: Segment */}
             {currentStep === 1 && (
-              <div className="animate-fade-in">
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
                 <h2 className="text-xl font-bold text-text-primary mb-6">
                   Your target audience
                 </h2>
@@ -230,16 +253,16 @@ export default function CampaignFlow() {
                       value={refinement}
                       onChange={(e) => setRefinement(e.target.value)}
                       placeholder="e.g. Only customers who bought Serum"
-                      className="flex-1 px-4 py-3 rounded-lg bg-surface-bg border border-surface-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors"
+                      className="input-glass flex-1"
                       id="segment-refinement-input"
                     />
                     <button
                       onClick={handleRefine}
                       disabled={!refinement.trim()}
-                      className="px-5 py-3 rounded-lg border border-surface-border text-text-secondary text-sm font-medium hover:border-accent/30 hover:text-text-primary transition-all disabled:opacity-30"
+                      className="btn-outline !text-sm"
                       id="segment-adjust-btn"
                     >
-                      Adjust →
+                      Adjust <IconArrowRight size={14} />
                     </button>
                   </div>
                 </div>
@@ -247,24 +270,30 @@ export default function CampaignFlow() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setCurrentStep(0)}
-                    className="px-6 py-3 rounded-lg border border-surface-border text-text-secondary text-sm font-medium hover:border-accent/30 hover:text-text-primary transition-all"
+                    className="btn-outline"
                   >
-                    ← Back
+                    <IconArrowLeft size={15} /> Back
                   </button>
                   <button
                     onClick={() => setCurrentStep(2)}
-                    className="flex-1 py-3 rounded-lg bg-accent hover:bg-accent-hover text-white font-semibold transition-all duration-200"
+                    className="flex-1 py-3 rounded-xl btn-accent font-semibold"
                     id="step2-next-btn"
                   >
-                    Use this segment →
+                    Use this segment <IconArrowRight size={16} />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Step 3: Message */}
             {currentStep === 2 && (
-              <div className="animate-fade-in">
+              <motion.div
+                key="step-2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
                 <h2 className="text-xl font-bold text-text-primary mb-6">
                   Craft your message
                 </h2>
@@ -281,37 +310,43 @@ export default function CampaignFlow() {
                 <div className="flex gap-3 mt-6">
                   <button
                     onClick={() => setCurrentStep(1)}
-                    className="px-6 py-3 rounded-lg border border-surface-border text-text-secondary text-sm font-medium hover:border-accent/30 hover:text-text-primary transition-all"
+                    className="btn-outline"
                   >
-                    ← Back
+                    <IconArrowLeft size={15} /> Back
                   </button>
                   <button
                     onClick={() => setCurrentStep(3)}
-                    className="flex-1 py-3 rounded-lg bg-accent hover:bg-accent-hover text-white font-semibold transition-all duration-200"
+                    className="flex-1 py-3 rounded-xl btn-accent font-semibold"
                     id="step3-next-btn"
                   >
-                    Message looks good →
+                    Message looks good <IconArrowRight size={16} />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Step 4: Confirm */}
             {currentStep === 3 && (
-              <div className="animate-fade-in">
+              <motion.div
+                key="step-3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
                 <h2 className="text-xl font-bold text-text-primary mb-6">
                   Review & send
                 </h2>
 
                 {/* Summary Card */}
-                <div className="p-6 rounded-xl bg-surface-bg border border-surface-border mb-6 space-y-4">
+                <div className="p-6 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-6 space-y-4">
                   <div>
                     <label className="text-xs text-text-muted mb-1.5 block">Campaign Name</label>
                     <input
                       type="text"
                       value={campaignName}
                       onChange={(e) => setCampaignName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg bg-surface-card border border-surface-border text-text-primary text-sm focus:outline-none focus:border-accent/50 transition-colors"
+                      className="input-glass"
                       id="campaign-name-input"
                     />
                   </div>
@@ -343,10 +378,8 @@ export default function CampaignFlow() {
                 </div>
 
                 {/* Warning */}
-                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20 mb-6 flex items-start gap-3">
-                  <svg className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                  </svg>
+                <div className="p-4 rounded-xl bg-warning/5 border border-warning/20 mb-6 flex items-start gap-3">
+                  <IconAlertTriangle size={18} className="text-warning flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-warning/90">
                     This will send <span className="font-semibold">{preview.customer_count.toLocaleString('en-IN')} messages</span>.
                     This cannot be undone.
@@ -356,32 +389,31 @@ export default function CampaignFlow() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setCurrentStep(2)}
-                    className="px-6 py-3 rounded-lg border border-surface-border text-text-secondary text-sm font-medium hover:border-accent/30 hover:text-text-primary transition-all"
+                    className="btn-outline"
                   >
-                    ← Back
+                    <IconArrowLeft size={15} /> Back
                   </button>
                   <button
                     onClick={handleConfirm}
                     disabled={sending || !campaignName.trim()}
-                    className="flex-1 py-3.5 rounded-lg bg-accent hover:bg-accent-hover text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-3.5 rounded-xl btn-accent font-bold text-lg"
                     id="send-campaign-btn"
                   >
                     {sending ? (
                       <>
-                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Sending...
                       </>
                     ) : (
-                      <>Send Campaign 🚀</>
+                      <>
+                        Send Campaign <IconRocket size={18} />
+                      </>
                     )}
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
-          </>
+          </AnimatePresence>
         )}
       </div>
     </div>
@@ -393,7 +425,7 @@ export default function CampaignFlow() {
 function LoadingState() {
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin mb-4" />
+      <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white/60 animate-spin mb-4" />
       <p className="text-text-secondary font-medium">AI is thinking...</p>
       <p className="text-text-muted text-sm mt-1">Analyzing your customer data</p>
     </div>
@@ -403,13 +435,11 @@ function LoadingState() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <svg className="w-12 h-12 text-error mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-      </svg>
+      <IconAlertTriangle size={40} className="text-error mb-4" />
       <p className="text-text-primary font-medium mb-2">Failed to generate preview</p>
       <button
         onClick={onRetry}
-        className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-all"
+        className="btn-accent"
       >
         Try again
       </button>

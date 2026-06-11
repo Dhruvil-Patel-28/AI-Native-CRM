@@ -6,6 +6,8 @@
  */
 
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { IconBrandWhatsapp, IconMail } from '@tabler/icons-react'
 import type { Campaign } from '../services/api'
 
 interface CampaignStatsProps {
@@ -16,14 +18,15 @@ interface CampaignStatsProps {
 export default function CampaignStats({ campaign, index }: CampaignStatsProps) {
   const navigate = useNavigate()
 
-  const channelConfig = campaign.channel === 'whatsapp'
-    ? { color: 'text-emerald-400', bg: 'bg-emerald-400/10', label: 'WhatsApp' }
-    : { color: 'text-blue-400', bg: 'bg-blue-400/10', label: 'Email' }
+  const isWhatsapp = campaign.channel === 'whatsapp'
 
   return (
-    <div
-      className="glass-card p-4 hover:border-accent/20 transition-all duration-300 cursor-pointer animate-slide-up"
-      style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'backwards' }}
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.35 }}
+      whileHover={{ y: -1 }}
+      className="glass-card p-4 cursor-pointer group"
       onClick={() => navigate(`/results/${campaign.id}`)}
       id={`campaign-card-${campaign.id}`}
     >
@@ -35,8 +38,19 @@ export default function CampaignStats({ campaign, index }: CampaignStatsProps) {
           </h4>
         </div>
         <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${channelConfig.bg} ${channelConfig.color}`}>
-            {channelConfig.label}
+          <span
+            className={`tag ${
+              isWhatsapp
+                ? 'bg-emerald-400/10 text-emerald-400'
+                : 'bg-blue-400/10 text-blue-400'
+            }`}
+          >
+            {isWhatsapp ? (
+              <IconBrandWhatsapp size={10} />
+            ) : (
+              <IconMail size={10} />
+            )}
+            {isWhatsapp ? 'WhatsApp' : 'Email'}
           </span>
           <StatusBadge status={campaign.status} />
         </div>
@@ -45,9 +59,9 @@ export default function CampaignStats({ campaign, index }: CampaignStatsProps) {
       {/* Stats Row */}
       <div className="flex items-center gap-3 text-xs text-text-muted mb-2">
         <span>{campaign.total_sent} sent</span>
-        <span className="text-surface-border">·</span>
+        <span className="text-white/10">·</span>
         <span>{campaign.total_opened} opened</span>
-        <span className="text-surface-border">·</span>
+        <span className="text-white/10">·</span>
         <span>{campaign.total_clicked} clicked</span>
       </div>
 
@@ -64,22 +78,22 @@ export default function CampaignStats({ campaign, index }: CampaignStatsProps) {
           {campaign.ai_summary}
         </p>
       )}
-    </div>
+    </motion.div>
   )
 }
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'running') {
     return (
-      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-warning/10 text-warning">
-        <span className="w-1.5 h-1.5 rounded-full bg-warning pulse-dot" />
+      <span className="tag bg-warning/10 text-warning">
+        <span className="status-dot live" />
         Running
       </span>
     )
   }
 
   return (
-    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-surface-hover text-text-muted">
+    <span className="tag bg-white/[0.06] text-text-muted">
       Completed
     </span>
   )

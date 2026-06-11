@@ -1,3 +1,6 @@
+/* ─── Google Font Import ─────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -25,16 +28,186 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #141414;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a3a;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Mode Backgrounds ───────────────────────────────────── */
+
+.app-shell {
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.guided {
+  background: linear-gradient(160deg,
+    #1A0810 0%,
+    #3D1225 35%,
+    #6B2840 65%,
+    #8B3A3A 100%);
+  background-attachment: fixed;
+}
+
+.app-shell.autopilot {
+  background: linear-gradient(160deg,
+    #06060F 0%,
+    #0A0820 40%,
+    #120D3A 70%,
+    #1E1060 100%);
+  background-attachment: fixed;
+}
+
+/* ─── Glass Cards — Mode-aware ────────────────────────────── */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.app-shell.guided .glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.app-shell.guided .glass-card:hover {
+  border-color: rgba(255, 107, 157, 0.2);
+  box-shadow: 0 0 30px rgba(255, 107, 157, 0.06);
+}
+
+.app-shell.autopilot .glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.app-shell.autopilot .glass-card:hover {
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.08);
+}
+
+/* ─── Mode-Aware Accent Buttons ──────────────────────────── */
+
+.btn-accent {
+  padding: 0.625rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: white;
+  background: #6366f1;
+}
+
+.btn-accent:hover {
+  background: #818cf8;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+
+.btn-accent:disabled {
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+.app-shell.guided .btn-accent {
+  background: #FF6B9D;
+}
+
+.app-shell.guided .btn-accent:hover {
+  background: #FF85B1;
+  box-shadow: 0 8px 25px rgba(255, 107, 157, 0.3);
+}
+
+.app-shell.autopilot .btn-accent {
+  background: #7C3AED;
+}
+
+.app-shell.autopilot .btn-accent:hover {
+  background: #8B5CF6;
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+}
+
+/* ─── Mode-Aware Outline Buttons ─────────────────────────── */
+
+.btn-outline {
+  padding: 0.625rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-outline:hover {
+  color: #f9fafb;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-outline:disabled {
+  opacity: 0.4;
+}
+
+/* ─── Mode-Aware Inputs ──────────────────────────────────── */
+
+.input-glass {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f9fafb;
+  font-size: 0.875rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-glass::placeholder {
+  color: #6b7280;
+}
+
+.input-glass:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.app-shell.guided .input-glass:focus {
+  border-color: rgba(255, 107, 157, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+}
+
+.app-shell.autopilot .input-glass:focus {
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.input-glass:disabled {
+  opacity: 0.5;
 }
 
 /* ─── Skeleton Loading ────────────────────────────────────── */
@@ -47,22 +220,13 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    #1a1a1a 25%,
-    #2a2a2a 50%,
-    #1a1a1a 75%
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
-}
-
-/* ─── Glass Card ──────────────────────────────────────────── */
-
-.glass-card {
-  background: rgba(26, 26, 26, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
 }
 
 /* ─── Pulsing Dot (for "running" status) ──────────────────── */
@@ -74,4 +238,105 @@ body {
 
 .pulse-dot {
   animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ─── Glow Effects ────────────────────────────────────────── */
+
+.glow-guided {
+  box-shadow: 0 0 40px rgba(255, 107, 157, 0.12),
+              0 0 80px rgba(255, 107, 157, 0.06);
+}
+
+.glow-autopilot {
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.12),
+              0 0 80px rgba(124, 58, 237, 0.06);
+}
+
+/* ─── Sidebar ─────────────────────────────────────────────── */
+
+.sidebar {
+  background: rgba(10, 10, 14, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Tag / Badge ─────────────────────────────────────────── */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Status Indicator ────────────────────────────────────── */
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.live {
+  background: #22c55e;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ─── Mode Switcher ───────────────────────────────────────── */
+
+.mode-switcher {
+  position: relative;
+  display: flex;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.mode-switcher-btn {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+}
+
+.mode-switcher-btn.active {
+  color: #f9fafb;
+}
+
+.mode-switcher-indicator {
+  position: absolute;
+  top: 3px;
+  height: calc(100% - 6px);
+  border-radius: 10px;
+}
+
+.mode-switcher-indicator.guided {
+  background: linear-gradient(135deg, rgba(255, 107, 157, 0.2), rgba(255, 107, 157, 0.1));
+  border: 1px solid rgba(255, 107, 157, 0.2);
+}
+
+.mode-switcher-indicator.autopilot {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(124, 58, 237, 0.1));
+  border: 1px solid rgba(124, 58, 237, 0.2);
 }

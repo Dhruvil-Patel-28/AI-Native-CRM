@@ -14,6 +14,13 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import {
+  IconArrowLeft,
+  IconSparkles,
+  IconBrandWhatsapp,
+  IconMail,
+} from '@tabler/icons-react'
 import { getCampaignStatus, type CampaignStatus, type MessageRecord } from '../services/api'
 
 export default function Results() {
@@ -71,7 +78,7 @@ export default function Results() {
     return (
       <div className="p-8 max-w-5xl mx-auto">
         <div className="flex flex-col items-center justify-center py-24">
-          <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin mb-4" />
+          <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white/60 animate-spin mb-4" />
           <p className="text-text-secondary">Loading campaign results...</p>
         </div>
       </div>
@@ -99,13 +106,18 @@ export default function Results() {
           <h1 className="text-2xl font-bold text-text-primary flex items-center gap-3">
             {campaign.name}
             {isRunning && (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-warning bg-warning/10 px-3 py-1 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-warning pulse-dot" />
+              <span className="tag bg-warning/10 text-warning text-xs">
+                <span className="status-dot live" />
                 Live
               </span>
             )}
           </h1>
-          <p className="text-text-muted text-sm mt-1">
+          <p className="text-text-muted text-sm mt-1 flex items-center gap-1.5">
+            {campaign.channel === 'whatsapp' ? (
+              <IconBrandWhatsapp size={14} className="text-emerald-400" />
+            ) : (
+              <IconMail size={14} className="text-blue-400" />
+            )}
             {campaign.channel === 'whatsapp' ? 'WhatsApp' : 'Email'} campaign
             {' · '}
             {new Date(campaign.created_at).toLocaleDateString('en-IN', {
@@ -118,30 +130,10 @@ export default function Results() {
 
       {/* ─── Top Stats Bar ─────────────────────────────── */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatBlock
-          label="Sent"
-          value={campaign.total_sent}
-          total={campaign.total_sent}
-          color="bg-text-secondary"
-        />
-        <StatBlock
-          label="Delivered"
-          value={campaign.total_delivered}
-          total={campaign.total_sent}
-          color="bg-blue-500"
-        />
-        <StatBlock
-          label="Opened"
-          value={campaign.total_opened}
-          total={campaign.total_sent}
-          color="bg-warning"
-        />
-        <StatBlock
-          label="Clicked"
-          value={campaign.total_clicked}
-          total={campaign.total_sent}
-          color="bg-success"
-        />
+        <StatBlock label="Sent" value={campaign.total_sent} total={campaign.total_sent} color="bg-text-secondary" delay={0} />
+        <StatBlock label="Delivered" value={campaign.total_delivered} total={campaign.total_sent} color="bg-blue-500" delay={0.05} />
+        <StatBlock label="Opened" value={campaign.total_opened} total={campaign.total_sent} color="bg-warning" delay={0.1} />
+        <StatBlock label="Clicked" value={campaign.total_clicked} total={campaign.total_sent} color="bg-success" delay={0.15} />
       </div>
 
       {/* Failed count */}
@@ -175,11 +167,11 @@ export default function Results() {
         <div className="glass-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-success pulse-dot' : 'bg-text-muted'}`} />
+              <span className={`status-dot ${isRunning ? 'live' : ''}`} style={isRunning ? {} : { background: '#6b7280' }} />
               Live Delivery Feed
             </h3>
             {userScrolled && (
-              <span className="text-[10px] text-warning bg-warning/10 px-2 py-0.5 rounded-full">
+              <span className="tag bg-warning/10 text-warning">
                 Paused
               </span>
             )}
@@ -206,11 +198,14 @@ export default function Results() {
         {/* AI Summary */}
         <div>
           {campaign.status === 'completed' && campaign.ai_summary ? (
-            <div className="glass-card p-6 animate-fade-in">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="glass-card p-6"
+            >
               <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-                </svg>
+                <IconSparkles size={16} className="text-[#FF6B9D]" />
                 Campaign Summary
               </h3>
 
@@ -220,7 +215,7 @@ export default function Results() {
                   return (
                     <div
                       key={idx}
-                      className="mt-4 p-4 rounded-lg bg-accent/5 border-l-2 border-accent"
+                      className="mt-4 p-4 rounded-xl bg-white/[0.03] border-l-2 border-[#FF6B9D]"
                     >
                       <p className="text-sm text-text-primary leading-relaxed">
                         {paragraph}
@@ -237,15 +232,15 @@ export default function Results() {
 
               <button
                 onClick={() => navigate('/')}
-                className="mt-6 w-full py-2.5 rounded-lg border border-surface-border text-text-secondary text-sm font-medium hover:border-accent/30 hover:text-text-primary transition-all"
+                className="mt-6 w-full btn-outline"
                 id="back-to-dashboard-btn"
               >
-                ← Back to Dashboard
+                <IconArrowLeft size={15} /> Back to Dashboard
               </button>
-            </div>
+            </motion.div>
           ) : isRunning ? (
             <div className="glass-card p-6 flex flex-col items-center justify-center h-80">
-              <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin mb-4" />
+              <div className="w-10 h-10 rounded-full border-2 border-white/10 border-t-white/40 animate-spin mb-4" />
               <p className="text-text-secondary text-sm font-medium">Campaign in progress</p>
               <p className="text-text-muted text-xs mt-1">Summary will appear when complete</p>
             </div>
@@ -254,9 +249,9 @@ export default function Results() {
               <p className="text-text-muted text-sm">No summary available</p>
               <button
                 onClick={() => navigate('/')}
-                className="mt-4 px-4 py-2 rounded-lg border border-surface-border text-text-secondary text-sm hover:text-text-primary transition-all"
+                className="mt-4 btn-outline !text-sm"
               >
-                ← Back to Dashboard
+                <IconArrowLeft size={14} /> Back to Dashboard
               </button>
             </div>
           )}
@@ -273,27 +268,36 @@ function StatBlock({
   value,
   total,
   color,
+  delay,
 }: {
   label: string
   value: number
   total: number
   color: string
+  delay: number
 }) {
   const percentage = total > 0 ? (value / total) * 100 : 0
 
   return (
-    <div className="glass-card p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="glass-card p-4"
+    >
       <p className="text-xs text-text-muted mb-1">{label}</p>
       <p className="text-3xl font-bold text-text-primary tabular-nums">
         {value.toLocaleString('en-IN')}
       </p>
-      <div className="mt-2 h-1.5 rounded-full bg-surface-bg overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color} transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
+      <div className="mt-2 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ delay: delay + 0.2, duration: 0.8, ease: 'easeOut' }}
         />
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -325,7 +329,7 @@ function FeedItem({ message }: { message: MessageRecord }) {
     ?? message.sent_at
 
   return (
-    <div className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-surface-hover/50 transition-colors animate-slide-in-right">
+    <div className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/[0.03] transition-colors">
       <span className={`text-sm font-mono ${config.color}`}>
         {config.icon}
       </span>
